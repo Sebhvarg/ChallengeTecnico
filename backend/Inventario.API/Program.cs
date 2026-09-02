@@ -35,7 +35,7 @@ try
 
     // 2. Base de Datos (Entity Framework Core con SQL Server)
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-        ?? "Server=localhost;Database=Prueba;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true;";
+        ?? "Server=localhost;Database=Prueba;User Id=sa;Password=UserCachyOS1234!;TrustServerCertificate=True;MultipleActiveResultSets=true;";
 
     builder.Services.AddDbContext<AppDbContext>(options =>
     {
@@ -64,15 +64,12 @@ try
             options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
         });
 
-    // 5. Configuración de CORS
-    var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() 
-        ?? new[] { "http://localhost:4200", "http://127.0.0.1:4200" };
-
+    // 5. Configuración de CORS Flexible y Robusta
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("AllowAngularApp", policy =>
         {
-            policy.WithOrigins(allowedOrigins)
+            policy.SetIsOriginAllowed(_ => true) // Permite localhost:4200, 127.0.0.1:4200 y cualquier origen de desarrollo
                   .AllowAnyHeader()
                   .AllowAnyMethod()
                   .AllowCredentials();
@@ -124,7 +121,6 @@ try
             }
         });
 
-        // Configuración del esquema de seguridad JWT Bearer en Swagger UI
         c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
         {
             Description = "Autenticación JWT usando el esquema Bearer. \r\n\r\n Ingrese 'Bearer' [espacio] y luego su token.\r\n\r\nEjemplo: \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6...\"",
@@ -152,7 +148,6 @@ try
             }
         });
 
-        // Incluir comentarios XML para documentación de Swagger
         var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
         var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
         if (File.Exists(xmlPath))
@@ -163,24 +158,19 @@ try
 
     var app = builder.Build();
 
-    // 8. Pipeline de Middlewares
-    app.UseMiddleware<ErrorHandlingMiddleware>();
+    // 8. Pipeline de Middlewares (CORS de primero para evitar preflight issues)
+    app.UseCors("AllowAngularApp");
 
-    // Middleware de logging de peticiones Serilog
+    app.UseMiddleware<ErrorHandlingMiddleware>();
     app.UseSerilogRequestLogging();
 
-    // Swagger UI disponible en Development y Production
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "API Inventario v1");
-        c.RoutePrefix = string.Empty; // Swagger en la raíz del backend (http://localhost:5000/)
+        c.RoutePrefix = string.Empty;
         c.DocumentTitle = "Inventario API - Swagger Docs";
     });
-
-    app.UseHttpsRedirection();
-
-    app.UseCors("AllowAngularApp");
 
     app.UseAuthentication();
     app.UseAuthorization();

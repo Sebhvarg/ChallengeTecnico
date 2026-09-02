@@ -34,7 +34,8 @@
             ],
             "scripts": [],
             "allowedCommonJsDependencies": [
-              "sweetalert2"
+              "sweetalert2",
+              "crypto-js"
             ]
           },
           "configurations": {

@@ -25,3 +25,8 @@ export interface LoginResponse {
   usuario: UserInfo;
   rutas: RutaPermiso[];
 }
+
+export interface EncryptedNetworkPayload {
+  payload: string;
+  iv: string;
+}

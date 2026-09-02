@@ -20,13 +20,11 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Inicia sesión y genera un token JWT.
+    /// Inicia sesión y genera un payload cifrado con AES-256 (Token JWT, Usuario y Rutas).
     /// </summary>
-    /// <param name="request">Credenciales del usuario (usuario o email y contraseña).</param>
-    /// <returns>Token JWT, fecha de expiración, datos de usuario y rutas autorizadas.</returns>
     [HttpPost("login")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<EncryptedResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
@@ -38,15 +36,15 @@ public class AuthController : ControllerBase
         }
 
         var resultado = await _authService.LoginAsync(request);
-        return Ok(ApiResponse<LoginResponseDto>.Ok(resultado, "Inicio de sesión exitoso."));
+        return Ok(ApiResponse<EncryptedResponseDto>.Ok(resultado, "Inicio de sesión exitoso."));
     }
 
     /// <summary>
-    /// Obtiene los datos del perfil del usuario autenticado actualmente.
+    /// Obtiene los datos del perfil del usuario cifrados.
     /// </summary>
     [HttpGet("perfil")]
     [Authorize]
-    [ProducesResponseType(typeof(ApiResponse<UserInfoDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<EncryptedResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetPerfil()
     {
@@ -57,6 +55,6 @@ public class AuthController : ControllerBase
         }
 
         var perfil = await _authService.GetUserProfileAsync(userId);
-        return Ok(ApiResponse<UserInfoDto>.Ok(perfil));
+        return Ok(ApiResponse<EncryptedResponseDto>.Ok(perfil));
     }
 }

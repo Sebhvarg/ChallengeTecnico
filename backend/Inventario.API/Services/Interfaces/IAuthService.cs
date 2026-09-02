@@ -4,6 +4,6 @@ namespace Inventario.API.Services.Interfaces;
 
 public interface IAuthService
 {
-    Task<LoginResponseDto> LoginAsync(LoginRequestDto request);
-    Task<UserInfoDto> GetUserProfileAsync(int userId);
+    Task<EncryptedResponseDto> LoginAsync(LoginRequestDto request);
+    Task<EncryptedResponseDto> GetUserProfileAsync(int userId);
 }
