@@ -52,8 +52,8 @@ export class NotificationService {
       text,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#2563eb',
-      cancelButtonColor: '#ef4444',
+      confirmButtonColor: '#913065',
+      cancelButtonColor: '#64748b',
       confirmButtonText,
       cancelButtonText: 'Cancelar',
       reverseButtons: true

@@ -24,13 +24,4 @@ export class LayoutComponent {
   logout() {
     this.authService.logout();
   }
-
-  getMenuIcon(ruta: string): string {
-    if (ruta.includes('dashboard')) return '📊';
-    if (ruta.includes('productos')) return '📦';
-    if (ruta.includes('proveedores')) return '🏢';
-    if (ruta.includes('inventario')) return '📋';
-    if (ruta.includes('reportes')) return '📈';
-    return '📁';
-  }
 }
