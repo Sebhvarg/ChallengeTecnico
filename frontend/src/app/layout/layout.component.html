@@ -1,0 +1,122 @@
+<div class="min-h-screen flex bg-slate-50 text-slate-800">
+  
+  <!-- Overlay Móvil -->
+  <div 
+    *ngIf="sidebarOpen()" 
+    (click)="closeSidebar()"
+    class="fixed inset-0 bg-slate-900/50 z-40 lg:hidden transition-opacity">
+  </div>
+
+  <!-- Sidebar Lateral -->
+  <aside 
+    [class.translate-x-0]="sidebarOpen()"
+    [class.-translate-x-full]="!sidebarOpen()"
+    class="fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white flex flex-col transition-transform duration-300 ease-in-out lg:static lg:translate-x-0">
+    
+    <!-- Header Sidebar -->
+    <div class="h-16 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/30">
+          IN
+        </div>
+        <div>
+          <h1 class="font-bold text-base leading-tight tracking-tight text-white">Inventario Pro</h1>
+          <p class="text-xs text-slate-400">Challenge Full Stack</p>
+        </div>
+      </div>
+      <button (click)="closeSidebar()" class="lg:hidden text-slate-400 hover:text-white p-1">
+        ✕
+      </button>
+    </div>
+
+    <!-- Info Usuario -->
+    <div class="p-4 border-b border-slate-800/80 bg-slate-900/50">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-400 font-semibold text-sm">
+          {{ authService.currentUser()?.nombres?.charAt(0) }}{{ authService.currentUser()?.apellidos?.charAt(0) }}
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-slate-200 truncate">
+            {{ authService.currentUser()?.nombres }} {{ authService.currentUser()?.apellidos }}
+          </p>
+          <div class="flex items-center gap-1.5 mt-0.5">
+            <span class="inline-block w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span class="text-xs text-blue-400 font-medium">
+              {{ authService.currentUser()?.rolNombre }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navegación Dinámica según Permisos/Rutas -->
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <p class="px-3 text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Módulos del Sistema</p>
+
+      <ng-container *ngFor="let item of authService.userRoutes()">
+        <a 
+          [routerLink]="item.ruta" 
+          routerLinkActive="bg-blue-600 text-white shadow-md shadow-blue-600/30 font-semibold"
+          (click)="closeSidebar()"
+          class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition-all">
+          <span class="text-lg leading-none">{{ getMenuIcon(item.ruta) }}</span>
+          <span>{{ item.nombre }}</span>
+        </a>
+      </ng-container>
+    </nav>
+
+    <!-- Footer Sidebar con Cerrar Sesión -->
+    <div class="p-3 border-t border-slate-800 bg-slate-950/60">
+      <button 
+        (click)="logout()"
+        class="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm text-rose-300 hover:text-white hover:bg-rose-600/80 transition-all font-medium border border-rose-500/20">
+        <span>🚪</span>
+        <span>Cerrar Sesión</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Contenido Principal -->
+  <div class="flex-1 flex flex-col min-w-0">
+    
+    <!-- Top Navbar -->
+    <header class="h-16 bg-white border-b border-slate-200 sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 shadow-xs">
+      <div class="flex items-center gap-3">
+        <button 
+          (click)="toggleSidebar()" 
+          class="lg:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 focus:outline-none"
+          aria-label="Abrir menú">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+        <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+          .NET 8 + Angular 18/19
+        </span>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <div class="text-right hidden sm:block">
+          <p class="text-xs text-slate-500 font-medium">Sesión activa</p>
+          <p class="text-sm font-semibold text-slate-800">{{ authService.currentUser()?.usuario }} ({{ authService.currentUser()?.rolNombre }})</p>
+        </div>
+        <button 
+          (click)="logout()" 
+          title="Cerrar sesión"
+          class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Área de Vistas Dinámicas -->
+    <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+      <div class="max-w-7xl mx-auto">
+        <router-outlet></router-outlet>
+      </div>
+    </main>
+
+  </div>
+</div>

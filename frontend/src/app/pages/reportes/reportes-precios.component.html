@@ -1,0 +1,69 @@
+<div class="space-y-6">
+  
+  <!-- Encabezado de la Vista -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+    <div>
+      <h1 class="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">Matriz Comparativa de Precios</h1>
+      <p class="text-xs sm:text-sm text-slate-500 mt-1">
+        Consulta de precios de venta de cada producto según el proveedor o lote correspondiente.
+      </p>
+    </div>
+  </div>
+
+  <!-- Barra de Filtros -->
+  <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
+    <div class="relative w-full sm:w-96">
+      <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">🔍</span>
+      <input 
+        type="text" 
+        [(ngModel)]="filtro" 
+        (keyup.enter)="buscar()"
+        placeholder="Filtrar por nombre del producto..."
+        class="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-slate-50/50 hover:bg-white transition-all"/>
+    </div>
+    <div class="flex items-center gap-2">
+      <button (click)="buscar()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-sm font-medium transition-colors">
+        Buscar
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabla de Matriz Comparativa (Pivot) -->
+  <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead class="bg-slate-900 text-white text-xs uppercase font-semibold">
+          <tr>
+            <th class="py-4 px-6 sticky left-0 bg-slate-900 z-10">Producto</th>
+            <th *ngFor="let prov of proveedores()" class="py-4 px-6 text-right">
+              Precio {{ prov }}
+            </th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <tr *ngFor="let item of reporte()" class="hover:bg-blue-50/40 transition-colors">
+            <td class="py-4 px-6 font-bold text-slate-900 sticky left-0 bg-white shadow-xs">
+              {{ item.producto }}
+            </td>
+            <td *ngFor="let prov of proveedores()" class="py-4 px-6 text-right font-mono">
+              <ng-container *ngIf="getPrecio(item, prov) > 0; else noData">
+                <span class="font-bold text-slate-800 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+                  ${{ getPrecio(item, prov) | number:'1.2-2' }}
+                </span>
+              </ng-container>
+              <ng-template #noData>
+                <span class="text-xs text-slate-400 italic">No disponible</span>
+              </ng-template>
+            </td>
+          </tr>
+          <tr *ngIf="reporte().length === 0 && !cargando()">
+            <td [attr.colspan]="proveedores().length + 1" class="py-8 text-center text-slate-400 text-sm">
+              No hay productos ni proveedores para mostrar en la matriz.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>

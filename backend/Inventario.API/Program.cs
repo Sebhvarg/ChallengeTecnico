@@ -80,7 +80,7 @@ try
     });
 
     // 6. Configuración de Autenticación con JWT
-    var jwtKey = builder.Configuration["Jwt:Key"] ?? "SuperSecretKeyForInventoryChallengeBackendAngular2026!";
+    var jwtKey = builder.Configuration["Jwt:Key"] ?? "Cachy0S$PruebaB6GyS3ba4stianH0lg++n200216202204!";
     var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "InventoryApi";
     var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "InventoryAngularClient";
 

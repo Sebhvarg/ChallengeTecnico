@@ -118,7 +118,7 @@ public class AuthService : IAuthService
 
     private string GenerarJwtToken(Entities.Usuario usuario, DateTime expiration)
     {
-        var jwtKey = _configuration["Jwt:Key"] ?? "SecretKeyForJwtAuthenticationChallenge1234567890!";
+        var jwtKey = _configuration["Jwt:Key"] ?? "Cachy0S$PruebaB6GyS3ba4stianH0lg++n200216202204!";
         var issuer = _configuration["Jwt:Issuer"] ?? "InventoryApi";
         var audience = _configuration["Jwt:Audience"] ?? "InventoryAngularClient";
 

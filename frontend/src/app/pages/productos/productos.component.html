@@ -1,0 +1,316 @@
+<div class="space-y-6">
+  
+  <!-- Encabezado de la Vista -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+    <div>
+      <h1 class="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">Gestión de Productos</h1>
+      <p class="text-xs sm:text-sm text-slate-500 mt-1">
+        Registro, edición, control de precios por proveedor y lotes de inventario.
+      </p>
+    </div>
+    <div class="flex items-center gap-3">
+      <button 
+        *ngIf="authService.isAdmin()"
+        (click)="abrirModalCrear()"
+        class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-600/20 transition-all">
+        <span>➕</span>
+        <span>Nuevo Producto</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Barra de Filtros y Búsqueda -->
+  <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
+    <div class="relative w-full sm:w-96">
+      <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">🔍</span>
+      <input 
+        type="text" 
+        [(ngModel)]="filtro" 
+        (keyup.enter)="buscar()"
+        placeholder="Buscar por código, nombre, lote o proveedor..."
+        class="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-slate-50/50 hover:bg-white transition-all"/>
+    </div>
+    <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+      <button 
+        (click)="buscar()" 
+        class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-sm font-medium transition-colors">
+        Buscar
+      </button>
+      <button 
+        *ngIf="filtro" 
+        (click)="limpiarFiltro()" 
+        class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition-colors">
+        Limpiar
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabla de Productos -->
+  <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead class="bg-slate-50 text-slate-500 border-b border-slate-200/80 text-xs uppercase font-semibold">
+          <tr>
+            <th class="py-3.5 px-4">Código</th>
+            <th class="py-3.5 px-4">Producto</th>
+            <th class="py-3.5 px-4">Categoría</th>
+            <th class="py-3.5 px-4">Proveedor / Lote</th>
+            <th class="py-3.5 px-4 text-right">Costo</th>
+            <th class="py-3.5 px-4 text-right">P. Venta</th>
+            <th class="py-3.5 px-4 text-center">Stock</th>
+            <th class="py-3.5 px-4 text-center" *ngIf="authService.isAdmin()">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <tr *ngFor="let item of productos()" class="hover:bg-slate-50/80 transition-colors">
+            <td class="py-3.5 px-4 font-mono font-bold text-blue-600">
+              {{ item.codigo }}
+            </td>
+            <td class="py-3.5 px-4 font-medium text-slate-900">
+              {{ item.producto }}
+            </td>
+            <td class="py-3.5 px-4">
+              <span class="text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-medium">
+                {{ item.categoria }}
+              </span>
+            </td>
+            <td class="py-3.5 px-4">
+              <span class="text-xs font-semibold px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200">
+                {{ item.proveedor }}
+              </span>
+              <p class="text-xs text-slate-400 font-mono mt-0.5">{{ item.numeroLote }}</p>
+            </td>
+            <td class="py-3.5 px-4 text-right text-slate-600 font-mono">
+              ${{ item.costoProducto | number:'1.2-2' }}
+            </td>
+            <td class="py-3.5 px-4 text-right font-bold text-slate-900 font-mono">
+              ${{ item.precioProducto | number:'1.2-2' }}
+            </td>
+            <td class="py-3.5 px-4 text-center">
+              <span 
+                [ngClass]="item.stockProducto > 10 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'"
+                class="text-xs font-semibold px-2.5 py-1 rounded-full border">
+                {{ item.stockProducto }} unids
+              </span>
+            </td>
+            <td class="py-3.5 px-4 text-center" *ngIf="authService.isAdmin()">
+              <div class="flex items-center justify-center gap-1.5">
+                <button 
+                  (click)="abrirModalLote(item)"
+                  title="Añadir otro lote/proveedor"
+                  class="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors">
+                  ➕ Lote
+                </button>
+                <button 
+                  (click)="abrirModalEditar(item)"
+                  title="Editar producto"
+                  class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                  ✏️
+                </button>
+                <button 
+                  (click)="eliminar(item)"
+                  title="Eliminar producto"
+                  class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors">
+                  🗑️
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="productos().length === 0 && !cargando()">
+            <td [attr.colspan]="authService.isAdmin() ? 8 : 7" class="py-8 text-center text-slate-400 text-sm">
+              No se encontraron productos con el filtro aplicado.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginación -->
+    <div class="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+      <div>
+        Total: <strong class="text-slate-800">{{ totalRegistros() }}</strong> registros | Página {{ paginaActual }} de {{ totalPaginas() }}
+      </div>
+      <div class="flex gap-2">
+        <button 
+          (click)="cambiarPagina(paginaActual - 1)" 
+          [disabled]="paginaActual <= 1"
+          class="px-3 py-1.5 rounded-lg border border-slate-300 disabled:opacity-40 hover:bg-slate-50">
+          Anterior
+        </button>
+        <button 
+          (click)="cambiarPagina(paginaActual + 1)" 
+          [disabled]="paginaActual >= totalPaginas()"
+          class="px-3 py-1.5 rounded-lg border border-slate-300 disabled:opacity-40 hover:bg-slate-50">
+          Siguiente
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CREAR PRODUCTO -->
+  <div *ngIf="mostrarModalCrear()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+        <h3 class="text-lg font-bold text-slate-800">Registrar Nuevo Producto</h3>
+        <button (click)="mostrarModalCrear.set(false)" class="text-slate-400 hover:text-slate-700">✕</button>
+      </div>
+
+      <form (ngSubmit)="guardarCrear()" class="space-y-4 text-sm">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Código * (Máx 4)</label>
+            <input type="text" [(ngModel)]="formCrear.codigo" name="codigo" maxlength="4" placeholder="ej: M050" required class="w-full px-3 py-2 rounded-xl border border-slate-300 uppercase focus:ring-2 focus:ring-blue-500"/>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Categoría</label>
+            <select [(ngModel)]="formCrear.idCategoria" name="idCategoria" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500">
+              <option [ngValue]="undefined">-- Seleccionar --</option>
+              <option *ngFor="let c of categorias()" [value]="c.id">{{ c.categoria }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Nombre del Producto *</label>
+          <input type="text" [(ngModel)]="formCrear.nombre" name="nombre" placeholder="ej: Monitor 50 pulgadas 4K" required class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500"/>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Descripción</label>
+          <textarea [(ngModel)]="formCrear.descripcion" name="descripcion" rows="2" placeholder="Detalle técnico u observaciones..." class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500"></textarea>
+        </div>
+
+        <div class="p-4 bg-slate-50 rounded-xl border border-slate-200/80 space-y-3">
+          <p class="text-xs font-bold uppercase text-slate-600 tracking-wider">Lote e Inventario Inicial</p>
+          
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Proveedor *</label>
+              <select [(ngModel)]="formCrear.idProveedor" name="idProveedor" required class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500">
+                <option *ngFor="let p of proveedores()" [value]="p.id">{{ p.nombre }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Número Lote *</label>
+              <input type="text" [(ngModel)]="formCrear.numeroLote" name="numeroLote" placeholder="LOT-0001-01" required class="w-full px-3 py-2 rounded-xl border border-slate-300 uppercase focus:ring-2 focus:ring-blue-500"/>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Costo ($)</label>
+              <input type="number" [(ngModel)]="formCrear.costoProducto" name="costo" step="0.01" min="0" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500"/>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Precio Venta ($)</label>
+              <input type="number" [(ngModel)]="formCrear.precioProducto" name="precio" step="0.01" min="0" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500"/>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Stock Inicial</label>
+              <input type="number" [(ngModel)]="formCrear.stockProducto" name="stock" min="1" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500"/>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-3 border-t border-slate-100">
+          <button type="button" (click)="mostrarModalCrear.set(false)" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50">Cancelar</button>
+          <button type="submit" [disabled]="guardando()" class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-md shadow-blue-600/20 disabled:opacity-50">
+            {{ guardando() ? 'Guardando...' : 'Crear Producto' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: EDITAR PRODUCTO -->
+  <div *ngIf="mostrarModalEditar()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+        <h3 class="text-lg font-bold text-slate-800">Editar Producto: {{ formEditar.codigo }}</h3>
+        <button (click)="mostrarModalEditar.set(false)" class="text-slate-400 hover:text-slate-700">✕</button>
+      </div>
+
+      <form (ngSubmit)="guardarEditar()" class="space-y-4 text-sm">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Nombre *</label>
+          <input type="text" [(ngModel)]="formEditar.nombre" name="nombre" required class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500"/>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Categoría</label>
+          <select [(ngModel)]="formEditar.idCategoria" name="idCategoria" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500">
+            <option [ngValue]="undefined">-- Sin Categoría --</option>
+            <option *ngFor="let c of categorias()" [value]="c.id">{{ c.categoria }}</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Descripción</label>
+          <textarea [(ngModel)]="formEditar.descripcion" name="descripcion" rows="3" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500"></textarea>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="estado" [(ngModel)]="formEditar.estado" name="estado" class="w-4 h-4 text-blue-600 rounded"/>
+          <label for="estado" class="text-xs font-semibold text-slate-700">Producto Activo</label>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-3 border-t border-slate-100">
+          <button type="button" (click)="mostrarModalEditar.set(false)" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50">Cancelar</button>
+          <button type="submit" [disabled]="guardando()" class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold disabled:opacity-50">
+            {{ guardando() ? 'Guardando...' : 'Actualizar' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: AGREGAR LOTE / PROVEEDOR ADICIONAL -->
+  <div *ngIf="mostrarModalLote()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+        <div>
+          <h3 class="text-lg font-bold text-slate-800">Agregar Lote / Proveedor</h3>
+          <p class="text-xs text-slate-500">{{ formLote.productoNombre }}</p>
+        </div>
+        <button (click)="mostrarModalLote.set(false)" class="text-slate-400 hover:text-slate-700">✕</button>
+      </div>
+
+      <form (ngSubmit)="guardarLote()" class="space-y-4 text-sm">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Proveedor *</label>
+          <select [(ngModel)]="formLote.idProveedor" name="idProveedor" required class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500">
+            <option *ngFor="let p of proveedores()" [value]="p.id">{{ p.nombre }}</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Número de Lote *</label>
+          <input type="text" [(ngModel)]="formLote.numeroLote" name="numeroLote" placeholder="ej: LOT-0001-02" required class="w-full px-3 py-2 rounded-xl border border-slate-300 uppercase focus:ring-2 focus:ring-blue-500"/>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Costo ($)</label>
+            <input type="number" [(ngModel)]="formLote.costoProducto" name="costo" step="0.01" min="0" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500"/>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">P. Venta ($)</label>
+            <input type="number" [(ngModel)]="formLote.precioProducto" name="precio" step="0.01" min="0" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500"/>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Stock</label>
+            <input type="number" [(ngModel)]="formLote.stockProducto" name="stock" min="1" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500"/>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-3 border-t border-slate-100">
+          <button type="button" (click)="mostrarModalLote.set(false)" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50">Cancelar</button>
+          <button type="submit" [disabled]="guardando()" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold disabled:opacity-50">
+            {{ guardando() ? 'Guardando...' : 'Agregar Lote' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
