@@ -1,9 +1,13 @@
+USE Prueba;
+GO
+
 CREATE OR ALTER PROCEDURE spLogin
     @usuario VARCHAR(50) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
 
+    -- Validación de parámetro de entrada
     IF @usuario IS NULL OR LTRIM(RTRIM(@usuario)) = ''
     BEGIN
         RAISERROR('El parámetro @usuario no puede estar vacío.', 16, 1);
@@ -18,14 +22,22 @@ BEGIN
         u.email,
         u.contrasenaHash,
         u.rol AS idRol,
-        r.rol AS nombreRol
+        r.rol AS nombreRol,
+        -- Subconsulta que empaqueta las rutas activas como un array JSON: [{"nombre":"...","ruta":"..."}, ...]
+        (
+            SELECT 
+                ru.id,
+                ru.nombre,
+                ru.ruta
+            FROM Rutas ru WITH (NOLOCK)
+            WHERE ru.idRol = r.id AND ru.estado = 1
+            FOR JSON PATH
+        ) AS RutasJson
     FROM Usuario u WITH (NOLOCK)
     INNER JOIN Roles r WITH (NOLOCK) ON u.rol = r.id
     WHERE (u.usuario = LTRIM(RTRIM(@usuario)) OR u.email = LTRIM(RTRIM(@usuario)))
-      AND u.estado = 1 
       AND r.estado = 1;
 END;
-
 GO
 
 CREATE OR ALTER PROCEDURE spBuscarProveedores
