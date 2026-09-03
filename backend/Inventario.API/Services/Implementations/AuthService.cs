@@ -10,6 +10,7 @@ using Inventario.API.DTOs.Auth;
 using Inventario.API.Services.Interfaces;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Inventario.API.Services.Implementations;
@@ -19,23 +20,40 @@ public class AuthService : IAuthService
     private readonly AppDbContext _context;
     private readonly IConfiguration _configuration;
     private readonly IAuditoriaService _auditoriaService;
+    private readonly IMemoryCache _cache;
     private readonly ILogger<AuthService> _logger;
 
     public AuthService(
         AppDbContext context,
         IConfiguration configuration,
         IAuditoriaService auditoriaService,
+        IMemoryCache cache,
         ILogger<AuthService> logger)
     {
         _context = context;
         _configuration = configuration;
         _auditoriaService = auditoriaService;
+        _cache = cache;
         _logger = logger;
     }
 
     public async Task<EncryptedResponseDto> LoginAsync(LoginRequestDto request)
     {
         var cleanInput = request.Usuario.Trim();
+        var cacheKey = $"login_attempt_{cleanInput.ToLowerInvariant()}";
+
+        // 0. Verificar si el usuario se encuentra bloqueado por 3 intentos fallidos
+        if (_cache.TryGetValue(cacheKey, out LoginAttemptInfo? attemptInfo) && attemptInfo != null)
+        {
+            if (attemptInfo.LockoutEndUtc.HasValue && DateTime.UtcNow < attemptInfo.LockoutEndUtc.Value)
+            {
+                var remainingSec = Math.Max(1, (int)(attemptInfo.LockoutEndUtc.Value - DateTime.UtcNow).TotalSeconds);
+                var min = remainingSec / 60;
+                var sec = remainingSec % 60;
+                _logger.LogWarning("Petición de login rechazada por bloqueo temporal: {Usuario}. Restan {Segundos}s.", cleanInput, remainingSec);
+                throw new BadRequestException($"Acceso bloqueado por límite de 3 intentos fallidos. Intente nuevamente en {min:D2}:{sec:D2} minutos.");
+            }
+        }
 
         // 1. Ejecución del Stored Procedure spLogin a nivel de base de datos
         var connection = _context.Database.GetDbConnection();
@@ -99,8 +117,7 @@ public class AuthService : IAuthService
 
         if (!userFound)
         {
-            _logger.LogWarning("Intento de login fallido. Usuario o correo no encontrado: {Input}", cleanInput);
-            throw new UnauthorizedException("Credenciales inválidas. Por favor verifique su usuario y contraseña.");
+            await RegistrarFalloIntentoAsync(cacheKey, cleanInput);
         }
 
         // 2. Validación de Contraseña BCrypt
@@ -112,14 +129,16 @@ public class AuthService : IAuthService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al verificar hash BCrypt para usuario {Usuario}", usuario);
-            throw new UnauthorizedException("Credenciales inválidas.");
+            await RegistrarFalloIntentoAsync(cacheKey, cleanInput);
         }
 
         if (!passwordValida)
         {
-            _logger.LogWarning("Contraseña incorrecta para usuario: {Usuario}", usuario);
-            throw new UnauthorizedException("Credenciales inválidas. Por favor verifique su usuario y contraseña.");
+            await RegistrarFalloIntentoAsync(cacheKey, cleanInput);
         }
+
+        // Éxito: Limpiar intentos fallidos
+        _cache.Remove(cacheKey);
 
         // 3. Deserialización de las Rutas obtenidas directamente desde el Stored Procedure
         var rutas = new List<RutaDto>();
@@ -241,5 +260,56 @@ public class AuthService : IAuthService
         var token = tokenHandler.CreateToken(tokenDescriptor);
 
         return tokenHandler.WriteToken(token);
+    }
+
+    private async Task RegistrarFalloIntentoAsync(string cacheKey, string usuario)
+    {
+        if (!_cache.TryGetValue(cacheKey, out LoginAttemptInfo? attemptInfo) || attemptInfo == null)
+        {
+            attemptInfo = new LoginAttemptInfo { FailedAttempts = 0, LockoutEndUtc = null };
+        }
+
+        attemptInfo.FailedAttempts++;
+
+        if (attemptInfo.FailedAttempts >= 3)
+        {
+            attemptInfo.LockoutEndUtc = DateTime.UtcNow.AddMinutes(2);
+            _cache.Set(cacheKey, attemptInfo, TimeSpan.FromMinutes(3));
+
+            _logger.LogWarning("Acceso bloqueado: Usuario {Usuario} alcanzó 3 intentos fallidos.", usuario);
+            await _auditoriaService.RegistrarAsync(
+                "BLOQUEO_ACCESO", 
+                "Autenticación", 
+                $"Acceso bloqueado por 2 minutos para '{usuario}' tras alcanzar 3 intentos fallidos de autenticación.", 
+                null, 
+                usuario, 
+                "Sin Rol"
+            );
+
+            throw new BadRequestException("Ha alcanzado el límite de 3 intentos fallidos. Su acceso ha sido bloqueado temporalmente por 2 minutos.");
+        }
+        else
+        {
+            _cache.Set(cacheKey, attemptInfo, TimeSpan.FromMinutes(10));
+            var intentosRestantes = 3 - attemptInfo.FailedAttempts;
+
+            _logger.LogWarning("Intento de login fallido ({Intentos}/3) para usuario: {Usuario}", attemptInfo.FailedAttempts, usuario);
+            await _auditoriaService.RegistrarAsync(
+                "LOGIN_FALLIDO", 
+                "Autenticación", 
+                $"Intento de autenticación fallido ({attemptInfo.FailedAttempts}/3) para el usuario '{usuario}'.", 
+                null, 
+                usuario, 
+                "Sin Rol"
+            );
+
+            throw new UnauthorizedException($"Credenciales inválidas. Intento {attemptInfo.FailedAttempts} de 3. Le {(intentosRestantes == 1 ? "queda 1 intento" : $"quedan {intentosRestantes} intentos")}.");
+        }
+    }
+
+    private class LoginAttemptInfo
+    {
+        public int FailedAttempts { get; set; }
+        public DateTime? LockoutEndUtc { get; set; }
     }
 }

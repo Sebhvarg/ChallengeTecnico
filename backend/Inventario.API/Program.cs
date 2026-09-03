@@ -49,6 +49,7 @@ try
     });
 
     // 3. Inyección de Dependencias (Servicios de Negocio)
+    builder.Services.AddMemoryCache();
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped<IAuditoriaService, AuditoriaService>();
     builder.Services.AddScoped<IAuthService, AuthService>();
