@@ -35,7 +35,7 @@ try
 
     // 2. Base de Datos (Entity Framework Core con SQL Server)
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-        ?? "Server=localhost,1433;Database=Prueba;User Id=sa;Password=YourStrongPassword123!;TrustServerCertificate=True;MultipleActiveResultSets=true;";
+        ?? "Server=localhost,1433;Database=Prueba;User Id=sa;Password=UserCachyOS1234!;TrustServerCertificate=True;MultipleActiveResultSets=true;";
 
     builder.Services.AddDbContext<AppDbContext>(options =>
     {

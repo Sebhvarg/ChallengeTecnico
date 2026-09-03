@@ -166,13 +166,13 @@ export class ProductosComponent implements OnInit {
   cargarProductos(): void {
     this.cargando.set(true);
     this.productoService.getProductos(
-      this.filterState.search,
+      this.filterState.search || '',
+      this.paginaActual,
+      this.tamanoPagina,
       this.filterState['idCategoria'],
       this.filterState['precioMin'],
       this.filterState['precioMax'],
-      this.filterState['idProveedor'],
-      this.paginaActual,
-      this.tamanoPagina
+      this.filterState['idProveedor']
     ).subscribe({
       next: (res) => {
         if (res.exito && res.datos) {

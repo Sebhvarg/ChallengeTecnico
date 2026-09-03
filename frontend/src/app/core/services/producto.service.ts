@@ -14,13 +14,13 @@ export class ProductoService {
   constructor(private http: HttpClient) {}
 
   getProductos(
-    filtro?: string,
+    filtro: string = '',
+    pagina: number = 1,
+    tamanoPagina: number = 10,
     idCategoria?: number | null,
     precioMin?: number | null,
     precioMax?: number | null,
-    idProveedor?: number | null,
-    pagina: number = 1,
-    tamanoPagina: number = 10
+    idProveedor?: number | null
   ): Observable<ApiResponse<PagedResult<ProductoListItem>>> {
     let params = new HttpParams()
       .set('pagina', pagina.toString())
@@ -53,10 +53,6 @@ export class ProductoService {
     return this.http.get<ApiResponse<Producto>>(`${this.apiUrl}/${id}`);
   }
 
-  getProductoByCodigo(codigo: string): Observable<ApiResponse<Producto>> {
-    return this.http.get<ApiResponse<Producto>>(`${this.apiUrl}/codigo/${codigo}`);
-  }
-
   crearProducto(dto: CrearProductoDto): Observable<ApiResponse<Producto>> {
     return this.http.post<ApiResponse<Producto>>(this.apiUrl, dto);
   }
@@ -70,6 +66,6 @@ export class ProductoService {
   }
 
   agregarLote(dto: CrearLoteDto): Observable<ApiResponse<LoteProducto>> {
-    return this.http.post<ApiResponse<LoteProducto>>(`${this.apiUrl}/lotes`, dto);
+    return this.http.post<ApiResponse<LoteProducto>>(`${this.apiUrl}/${dto.idProducto}/lotes`, dto);
   }
 }
