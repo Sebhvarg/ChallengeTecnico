@@ -174,60 +174,64 @@ public class ProductoService : IProductoService
             throw new BadRequestException($"El número de lote '{lote}' ya se encuentra registrado.");
         }
 
-        using var transaction = await _context.Database.BeginTransactionAsync();
-        try
+        var strategy = _context.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
         {
-            var producto = new Producto
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                Codigo = codigo,
-                Nombre = nombre,
-                Descripcion = dto.Descripcion?.Trim(),
-                IdCategoria = dto.IdCategoria,
-                Estado = true,
-                FechaCreacion = DateTime.UtcNow
-            };
+                var producto = new Producto
+                {
+                    Codigo = codigo,
+                    Nombre = nombre,
+                    Descripcion = dto.Descripcion?.Trim(),
+                    IdCategoria = dto.IdCategoria,
+                    Estado = true,
+                    FechaCreacion = DateTime.UtcNow
+                };
 
-            _context.Productos.Add(producto);
-            await _context.SaveChangesAsync();
+                _context.Productos.Add(producto);
+                await _context.SaveChangesAsync();
 
-            var proveedorXProducto = new ProveedorXProducto
+                var proveedorXProducto = new ProveedorXProducto
+                {
+                    NumeroLote = lote,
+                    IdProveedor = dto.IdProveedor,
+                    IdProducto = producto.Id,
+                    Estado = true,
+                    FechaCreacion = DateTime.UtcNow
+                };
+
+                _context.ProveedorXProductos.Add(proveedorXProducto);
+                await _context.SaveChangesAsync();
+
+                var inventario = new Entities.Inventario
+                {
+                    IdLote = proveedorXProducto.Id,
+                    CostoProducto = dto.CostoProducto,
+                    PrecioProducto = dto.PrecioProducto,
+                    StockProducto = dto.StockProducto,
+                    FechaCreacion = DateTime.UtcNow,
+                    FechaActualizacion = DateTime.UtcNow
+                };
+
+                _context.Inventarios.Add(inventario);
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+
+                _logger.LogInformation("Producto {Codigo} - {Nombre} creado exitosamente con Lote {Lote}.", codigo, nombre, lote);
+                await _auditoriaService.RegistrarAsync("CREAR_PRODUCTO", "Productos", $"Se creó el producto '{codigo} - {nombre}' con lote inicial {lote}.");
+
+                return await ObtenerPorIdAsync(producto.Id);
+            }
+            catch (Exception ex)
             {
-                NumeroLote = lote,
-                IdProveedor = dto.IdProveedor,
-                IdProducto = producto.Id,
-                Estado = true,
-                FechaCreacion = DateTime.UtcNow
-            };
-
-            _context.ProveedorXProductos.Add(proveedorXProducto);
-            await _context.SaveChangesAsync();
-
-            var inventario = new Entities.Inventario
-            {
-                IdLote = proveedorXProducto.Id,
-                CostoProducto = dto.CostoProducto,
-                PrecioProducto = dto.PrecioProducto,
-                StockProducto = dto.StockProducto,
-                FechaCreacion = DateTime.UtcNow,
-                FechaActualizacion = DateTime.UtcNow
-            };
-
-            _context.Inventarios.Add(inventario);
-            await _context.SaveChangesAsync();
-
-            await transaction.CommitAsync();
-
-            _logger.LogInformation("Producto {Codigo} - {Nombre} creado exitosamente con Lote {Lote}.", codigo, nombre, lote);
-            await _auditoriaService.RegistrarAsync("CREAR_PRODUCTO", "Productos", $"Se creó el producto '{codigo} - {nombre}' con lote inicial {lote}.");
-
-            return await ObtenerPorIdAsync(producto.Id);
-        }
-        catch (Exception ex)
-        {
-            await transaction.RollbackAsync();
-            _logger.LogError(ex, "Error al crear producto con código {Codigo}", codigo);
-            throw;
-        }
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error al crear producto con código {Codigo}", codigo);
+                throw;
+            }
+        });
     }
 
     public async Task<ProductoDto> ActualizarProductoAsync(int id, ActualizarProductoDto dto)
@@ -330,55 +334,59 @@ public class ProductoService : IProductoService
             throw new BadRequestException($"El número de lote '{lote}' ya se encuentra registrado.");
         }
 
-        using var transaction = await _context.Database.BeginTransactionAsync();
-        try
+        var strategy = _context.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
         {
-            var pxp = new ProveedorXProducto
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                IdProducto = dto.IdProducto,
-                IdProveedor = dto.IdProveedor,
-                NumeroLote = lote,
-                Estado = true,
-                FechaCreacion = DateTime.UtcNow
-            };
+                var pxp = new ProveedorXProducto
+                {
+                    IdProducto = dto.IdProducto,
+                    IdProveedor = dto.IdProveedor,
+                    NumeroLote = lote,
+                    Estado = true,
+                    FechaCreacion = DateTime.UtcNow
+                };
 
-            _context.ProveedorXProductos.Add(pxp);
-            await _context.SaveChangesAsync();
+                _context.ProveedorXProductos.Add(pxp);
+                await _context.SaveChangesAsync();
 
-            var inv = new Entities.Inventario
+                var inv = new Entities.Inventario
+                {
+                    IdLote = pxp.Id,
+                    CostoProducto = dto.CostoProducto,
+                    PrecioProducto = dto.PrecioProducto,
+                    StockProducto = dto.StockProducto,
+                    FechaCreacion = DateTime.UtcNow,
+                    FechaActualizacion = DateTime.UtcNow
+                };
+
+                _context.Inventarios.Add(inv);
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+                await _auditoriaService.RegistrarAsync("CREAR_LOTE", "Inventario", $"Se agregó el lote '{lote}' con stock {dto.StockProducto} para el producto '{producto.Nombre}'.");
+
+                return new LoteProductoDto
+                {
+                    IdProveedorProducto = pxp.Id,
+                    NumeroLote = pxp.NumeroLote,
+                    IdProveedor = proveedor.Id,
+                    ProveedorNombre = proveedor.Nombre,
+                    CostoProducto = inv.CostoProducto,
+                    PrecioProducto = inv.PrecioProducto,
+                    StockProducto = inv.StockProducto,
+                    Estado = pxp.Estado
+                };
+            }
+            catch (Exception ex)
             {
-                IdLote = pxp.Id,
-                CostoProducto = dto.CostoProducto,
-                PrecioProducto = dto.PrecioProducto,
-                StockProducto = dto.StockProducto,
-                FechaCreacion = DateTime.UtcNow,
-                FechaActualizacion = DateTime.UtcNow
-            };
-
-            _context.Inventarios.Add(inv);
-            await _context.SaveChangesAsync();
-
-            await transaction.CommitAsync();
-            await _auditoriaService.RegistrarAsync("CREAR_LOTE", "Inventario", $"Se agregó el lote '{lote}' con stock {dto.StockProducto} para el producto '{producto.Nombre}'.");
-
-            return new LoteProductoDto
-            {
-                IdProveedorProducto = pxp.Id,
-                NumeroLote = pxp.NumeroLote,
-                IdProveedor = proveedor.Id,
-                ProveedorNombre = proveedor.Nombre,
-                CostoProducto = inv.CostoProducto,
-                PrecioProducto = inv.PrecioProducto,
-                StockProducto = inv.StockProducto,
-                Estado = pxp.Estado
-            };
-        }
-        catch (Exception ex)
-        {
-            await transaction.RollbackAsync();
-            _logger.LogError(ex, "Error al agregar lote al producto ID {IdProducto}", dto.IdProducto);
-            throw;
-        }
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error al agregar lote al producto ID {IdProducto}", dto.IdProducto);
+                throw;
+            }
+        });
     }
 
     private static ProductoDto MapToProductoDto(Producto producto)

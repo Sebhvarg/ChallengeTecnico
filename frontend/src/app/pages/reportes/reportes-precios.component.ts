@@ -15,9 +15,11 @@ export class ReportesPreciosComponent implements OnInit {
   private reporteService = inject(ReporteService);
 
   @ViewChild('precioTpl', { static: true }) precioTpl!: TemplateRef<any>;
+  @ViewChild('totalTpl', { static: true }) totalTpl!: TemplateRef<any>;
 
   columnas: TableColumn<ReportePrecioProducto>[] = [];
   reporte = signal<ReportePrecioProducto[]>([]);
+  listaProveedores = signal<string[]>([]);
   cargando = signal(false);
   filtro = '';
 
@@ -30,24 +32,38 @@ export class ReportesPreciosComponent implements OnInit {
     this.reporteService.getReportePreciosPorProveedor(this.filtro).subscribe({
       next: (res) => {
         if (res.exito && res.datos) {
-          this.reporte.set(res.datos);
-
-          // Extraer nombres únicos de los proveedores
+          // Extraer nombres únicos de los proveedores ordenados y calcular total por cada fila
           const provSet = new Set<string>();
-          res.datos.forEach(item => {
+          const datosCalculados = res.datos.map(item => {
+            const sumFila = this.calcularTotalProducto(item);
             Object.keys(item.preciosPorProveedor || {}).forEach(prov => provSet.add(prov));
+            return {
+              ...item,
+              total: sumFila
+            };
           });
-          const listaProveedores = Array.from(provSet).sort();
 
-          // Configurar columnas dinámicas estandarizadas para app-table
+          this.reporte.set(datosCalculados);
+
+          const proveedores = Array.from(provSet).sort();
+          this.listaProveedores.set(proveedores);
+
+          // Configurar columnas dinámicas: Producto + Proveedores + Columna Total
           this.columnas = [
-            { key: 'producto', header: 'Producto', cellClass: 'font-bold text-slate-900' },
-            ...listaProveedores.map(prov => ({
+            { key: 'producto', header: 'PRODUCTO', cellClass: 'font-bold text-slate-900' },
+            ...proveedores.map(prov => ({
               key: `preciosPorProveedor.${prov}`,
-              header: `Precio ${prov}`,
+              header: `PRECIO ${prov.toUpperCase()}`,
               align: 'right' as const,
               template: this.precioTpl
-            }))
+            })),
+            {
+              key: 'total',
+              header: 'TOTAL PRODUCTO',
+              align: 'right' as const,
+              template: this.totalTpl,
+              width: '160px'
+            }
           ];
         }
         this.cargando.set(false);
@@ -58,5 +74,25 @@ export class ReportesPreciosComponent implements OnInit {
 
   buscar(): void {
     this.cargarReporte();
+  }
+
+  // Calcular la suma de precios de los proveedores para un producto específico
+  calcularTotalProducto(item: ReportePrecioProducto): number {
+    if (!item.preciosPorProveedor) return 0;
+    return Object.values(item.preciosPorProveedor).reduce((acc, val) => acc + (Number(val) || 0), 0);
+  }
+
+  // Calcular la suma total de una columna de proveedor
+  calcularTotalProveedor(prov: string): number {
+    return this.reporte().reduce((acc, item) => {
+      return acc + (Number(item.preciosPorProveedor?.[prov]) || 0);
+    }, 0);
+  }
+
+  // Calcular la sumatoria general de toda la matriz
+  calcularGranTotal(): number {
+    return this.reporte().reduce((acc, item) => {
+      return acc + (Number(item.total) || this.calcularTotalProducto(item));
+    }, 0);
   }
 }

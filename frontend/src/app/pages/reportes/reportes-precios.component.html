@@ -5,7 +5,7 @@
     <div>
       <h1 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight">Matriz Comparativa de Precios</h1>
       <p class="text-xs sm:text-sm text-pink-100 mt-1">
-        Consulta de precios de venta de cada producto según el proveedor o lote correspondiente.
+        Consulta de precios de venta de cada producto según el proveedor o lote correspondiente y totales calculados.
       </p>
     </div>
   </div>
@@ -32,7 +32,7 @@
     </div>
   </div>
 
-  <!-- Tabla Genérica de Matriz Comparativa con Patrón Zebra -->
+  <!-- Tabla Genérica de Matriz Comparativa con Patrón Zebra y Columna Total -->
   <app-table
     [columns]="columnas"
     [data]="reporte()"
@@ -42,8 +42,44 @@
     emptyMessage="No hay productos ni proveedores para mostrar en la matriz.">
   </app-table>
 
+  <!-- Barra de Totales Acumulados por Proveedor & Gran Total -->
+  <div *ngIf="!cargando() && reporte().length > 0" class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+    <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+      
+      <div class="flex items-center gap-3">
+        <div class="p-2.5 bg-brand-primary-light text-brand-primary rounded-xl">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <div>
+          <h4 class="text-sm font-bold text-slate-900">Totales Acumulados</h4>
+          <p class="text-xs text-slate-500">Suma total de precios cotizados por cada proveedor</p>
+        </div>
+      </div>
+
+      <!-- Totales individuales por columna y Gran Total -->
+      <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end">
+        <div *ngFor="let prov of listaProveedores()" class="bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-200 text-right min-w-[120px]">
+          <span class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">{{ prov }}</span>
+          <span class="font-mono font-bold text-sm text-slate-900">
+            ${{ calcularTotalProveedor(prov) | number:'1.2-2' }}
+          </span>
+        </div>
+
+        <div class="bg-brand-primary text-white px-4 py-2 rounded-xl text-right shadow-sm min-w-[130px]">
+          <span class="block text-[10px] font-extrabold text-pink-100 uppercase tracking-wider">Gran Total</span>
+          <span class="font-mono font-extrabold text-base text-white">
+            ${{ calcularGranTotal() | number:'1.2-2' }}
+          </span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- Template para Celdas de Precios por Proveedor -->
-  <ng-template #precioTpl let-item let-value="value">
+  <ng-template #precioTpl let-item="item" let-value="value">
     <ng-container *ngIf="value > 0; else noData">
       <span class="font-mono font-bold text-slate-900 bg-brand-primary-light text-brand-primary px-3 py-1 rounded-lg border border-brand-primary-muted/30 text-sm inline-block">
         ${{ value | number:'1.2-2' }}
@@ -52,6 +88,13 @@
     <ng-template #noData>
       <span class="text-xs text-slate-400 italic">No disponible</span>
     </ng-template>
+  </ng-template>
+
+  <!-- Template para Columna de Total Acumulado por Producto -->
+  <ng-template #totalTpl let-item="item" let-value="value">
+    <span class="font-mono font-extrabold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200 text-sm inline-block shadow-xs">
+      ${{ (value ?? item?.total ?? calcularTotalProducto(item)) | number:'1.2-2' }}
+    </span>
   </ng-template>
 
 </div>
