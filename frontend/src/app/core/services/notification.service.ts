@@ -60,4 +60,16 @@ export class NotificationService {
     });
     return result.isConfirmed;
   }
+
+  modalAlert(title: string, text: string, icon: 'warning' | 'error' | 'info' | 'success' = 'error'): Promise<any> {
+    return Swal.fire({
+      icon: icon,
+      title: title,
+      text: text,
+      confirmButtonColor: '#913065',
+      confirmButtonText: 'Aceptar',
+      allowOutsideClick: false,
+      allowEscapeKey: false
+    });
+  }
 }

@@ -48,12 +48,37 @@ export class AuthService {
         }
 
         // Descifrado del payload que vino cifrado desde la consola de red
-        const decryptedData = this.cryptoStorage.decryptNetworkPayload<LoginResponse>(
+        const raw = this.cryptoStorage.decryptNetworkPayload<any>(
           res.datos.payload,
           res.datos.iv
         );
 
-        return decryptedData;
+        const usuarioRaw = raw.usuario || raw.Usuario || {};
+        const usuario: UserInfo = {
+          id: usuarioRaw.id ?? usuarioRaw.Id ?? 0,
+          nombres: usuarioRaw.nombres || usuarioRaw.Nombres || '',
+          apellidos: usuarioRaw.apellidos || usuarioRaw.Apellidos || '',
+          usuario: usuarioRaw.usuario || usuarioRaw.Usuario || '',
+          email: usuarioRaw.email || usuarioRaw.Email || '',
+          idRol: usuarioRaw.idRol ?? usuarioRaw.IdRol ?? 0,
+          rolNombre: usuarioRaw.rolNombre || usuarioRaw.RolNombre || ''
+        };
+
+        const rutasRaw = raw.rutas || raw.Rutas || [];
+        const rutas: RutaPermiso[] = rutasRaw.map((r: any) => ({
+          id: r.id ?? r.Id ?? 0,
+          nombre: r.nombre || r.Nombre || '',
+          ruta: r.ruta || r.Ruta || ''
+        }));
+
+        const normalizedResponse: LoginResponse = {
+          token: raw.token || raw.Token || '',
+          expiracion: raw.expiracion || raw.Expiracion || '',
+          usuario: usuario,
+          rutas: rutas
+        };
+
+        return normalizedResponse;
       }),
       tap(decryptedResponse => {
         // Almacenar en sessionStorage de forma cifrada con firma HMAC
@@ -67,18 +92,30 @@ export class AuthService {
     this.router.navigate(['/login']);
   }
 
+  private isHandlingTamper = false;
+
   /**
    * Cierre de sesión automático de emergencia cuando se detecta manipulación en DevTools/Storage
    */
   handleTamperingDetected(): void {
-    if (this.currentUser() || this.getToken()) {
+    if (this.isHandlingTamper) {
+      return;
+    }
+
+    if (this.currentUser() || sessionStorage.getItem(this.TOKEN_KEY) || sessionStorage.getItem(this.USER_KEY)) {
+      this.isHandlingTamper = true;
       console.warn('[Seguridad] Manipulación de datos de sesión detectada. Cerrando sesión de inmediato...');
+      
       this.clearSessionData();
-      this.notify.error(
-        'Se detectó una modificación no autorizada o manipulación en los datos de la sesión. Por motivos de seguridad, la sesión ha sido cerrada.',
-        'Alerta de Seguridad'
-      );
       this.router.navigate(['/login']);
+
+      this.notify.modalAlert(
+        'Sesión Cerrada por Seguridad',
+        'Se detectó una modificación no autorizada o alteración en los datos de la sesión almacenados en el navegador. Por motivos de seguridad, la sesión ha sido cerrada de inmediato.',
+        'error'
+      ).then(() => {
+        this.isHandlingTamper = false;
+      });
     }
   }
 
@@ -103,6 +140,7 @@ export class AuthService {
    * Guarda de forma cifrada el token JWT, usuario y rutas en sessionStorage
    */
   private setSession(authResult: LoginResponse): void {
+    this.isHandlingTamper = false;
     this.cryptoStorage.setItem(this.TOKEN_KEY, authResult.token);
     this.cryptoStorage.setItem(this.USER_KEY, authResult.usuario);
     this.cryptoStorage.setItem(this.ROUTES_KEY, authResult.rutas);
@@ -115,6 +153,7 @@ export class AuthService {
     this.cryptoStorage.removeItem(this.TOKEN_KEY);
     this.cryptoStorage.removeItem(this.USER_KEY);
     this.cryptoStorage.removeItem(this.ROUTES_KEY);
+    this.cryptoStorage.clear();
     this.currentUser.set(null);
     this.userRoutes.set([]);
   }
@@ -137,7 +176,7 @@ export class AuthService {
   }
 
   /**
-   * Vigilante en segundo plano que verifica que las claves en sessionStorage no hayan sido alteradas
+   * Vigilante continuo en segundo plano (cada 400ms) que verifica la integridad estricta de la sesión
    */
   private startIntegrityMonitor(): void {
     if (typeof window !== 'undefined') {
@@ -147,12 +186,22 @@ export class AuthService {
 
       this.integrityIntervalId = setInterval(() => {
         this.verifyCurrentSession();
-      }, 2000);
+      }, 400);
     }
   }
 
   private verifyCurrentSession(): void {
     if (this.currentUser()) {
+      const tokenRaw = sessionStorage.getItem(this.TOKEN_KEY);
+      const userRaw = sessionStorage.getItem(this.USER_KEY);
+      const routesRaw = sessionStorage.getItem(this.ROUTES_KEY);
+
+      // Si alguna de las claves fue borrada o alterada manualmente en DevTools
+      if (!tokenRaw || !userRaw || !routesRaw) {
+        this.handleTamperingDetected();
+        return;
+      }
+
       const isIntegrityOk = this.cryptoStorage.checkIntegrity([this.TOKEN_KEY, this.USER_KEY, this.ROUTES_KEY]);
       if (!isIntegrityOk) {
         this.handleTamperingDetected();

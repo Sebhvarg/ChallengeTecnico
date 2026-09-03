@@ -47,7 +47,8 @@ export class LoginComponent {
     }).subscribe({
       next: (res) => {
         this.cargando.set(false);
-        this.notify.success(`Bienvenido ${res.usuario.nombres}`);
+        const nombre = res.usuario?.nombres || res.usuario?.usuario || 'al Sistema';
+        this.notify.success(`Bienvenido ${nombre}`);
         this.router.navigate(['/dashboard']);
       },
       error: (err) => {

@@ -28,6 +28,21 @@ export class CryptoStorageService {
 
   private onTamperCallback?: () => void;
 
+  constructor() {
+    this.cleanLocalStorageResiduals();
+  }
+
+  /**
+   * Limpia cualquier residuo de autenticación anterior en localStorage para que solo exista en sessionStorage
+   */
+  cleanLocalStorageResiduals(): void {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('auth_user');
+      localStorage.removeItem('auth_routes');
+    }
+  }
+
   setTamperListener(callback: () => void): void {
     this.onTamperCallback = callback;
   }
@@ -60,6 +75,7 @@ export class CryptoStorageService {
 
   /**
    * Guarda un elemento en sessionStorage cifrado con AES-256 y firmado con HMAC.
+   * En DevTools se almacena como una cadena cifrada opaca 'ENC_...'.
    */
   setItem<T>(key: string, value: T): void {
     try {
@@ -85,7 +101,11 @@ export class CryptoStorageService {
         timestamp: Date.now()
       };
 
-      sessionStorage.setItem(key, JSON.stringify(envelope));
+      // Formato opaco base64 para que en DevTools sea completamente ilegible
+      const envelopeStr = JSON.stringify(envelope);
+      const storageValue = 'ENC_' + CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(envelopeStr));
+
+      sessionStorage.setItem(key, storageValue);
     } catch (err) {
       console.error(`[CryptoStorage] Error al cifrar ${key}:`, err);
     }
@@ -93,36 +113,49 @@ export class CryptoStorageService {
 
   /**
    * Obtiene y desencripta un elemento de sessionStorage.
-   * Si los datos fueron manipulados en DevTools, detecta la corrupción y lanza alerta.
+   * Si los datos fueron manipulados en DevTools (ej. texto plano o alteración de bits), lanza alerta y cierra sesión.
    */
   getItem<T>(key: string): T | null {
-    const rawEnvelope = sessionStorage.getItem(key);
-    if (!rawEnvelope) {
+    const rawValue = sessionStorage.getItem(key);
+    if (!rawValue) {
       return null;
     }
 
     try {
-      let envelope: EncryptedEnvelope;
-      try {
-        envelope = JSON.parse(rawEnvelope);
-      } catch {
+      // 1. Si no tiene el formato cifrado 'ENC_', fue alterado o escrito en texto plano manualmente
+      if (!rawValue.startsWith('ENC_')) {
         this.notifyTamper();
-        throw new StorageTamperedError(`El formato de la clave ${key} fue manipulado.`);
+        throw new StorageTamperedError(`La clave ${key} fue modificada a formato no cifrado.`);
       }
 
-      if (!envelope.payload || !envelope.signature || !envelope.iv) {
+      const base64Content = rawValue.substring(4);
+      const envelopeStr = CryptoJS.enc.Utf8.stringify(CryptoJS.enc.Base64.parse(base64Content));
+      if (!envelopeStr) {
+        this.notifyTamper();
+        throw new StorageTamperedError(`El contenido de la clave ${key} fue alterado.`);
+      }
+
+      let envelope: EncryptedEnvelope;
+      try {
+        envelope = JSON.parse(envelopeStr);
+      } catch {
         this.notifyTamper();
         throw new StorageTamperedError(`Estructura inválida en ${key}.`);
       }
 
-      // 1. Verificar firma HMAC de integridad
+      if (!envelope.payload || !envelope.signature || !envelope.iv) {
+        this.notifyTamper();
+        throw new StorageTamperedError(`Faltan campos de integridad en ${key}.`);
+      }
+
+      // 2. Verificar firma HMAC de integridad
       const expectedSignature = CryptoJS.HmacSHA256(`${envelope.payload}:${envelope.iv}`, this.HMAC_KEY).toString();
       if (envelope.signature !== expectedSignature) {
         this.notifyTamper();
         throw new StorageTamperedError(`Firma HMAC inválida en ${key}: Datos manipulados.`);
       }
 
-      // 2. Desencriptar AES
+      // 3. Desencriptar AES
       const iv = CryptoJS.enc.Hex.parse(envelope.iv);
       const decrypted = CryptoJS.AES.decrypt(envelope.payload, this.SECRET_KEY, {
         iv: iv,
@@ -133,7 +166,7 @@ export class CryptoStorageService {
       const decryptedText = decrypted.toString(CryptoJS.enc.Utf8);
       if (!decryptedText) {
         this.notifyTamper();
-        throw new StorageTamperedError(`Fallo de descifrado en ${key}. Posible manipulación de clave.`);
+        throw new StorageTamperedError(`Fallo de descifrado en ${key}.`);
       }
 
       return JSON.parse(decryptedText) as T;
@@ -148,10 +181,12 @@ export class CryptoStorageService {
 
   removeItem(key: string): void {
     sessionStorage.removeItem(key);
+    this.cleanLocalStorageResiduals();
   }
 
   clear(): void {
     sessionStorage.clear();
+    this.cleanLocalStorageResiduals();
   }
 
   /**
@@ -159,12 +194,17 @@ export class CryptoStorageService {
    */
   checkIntegrity(keys: string[]): boolean {
     for (const key of keys) {
-      if (sessionStorage.getItem(key)) {
-        try {
-          this.getItem(key);
-        } catch {
+      const raw = sessionStorage.getItem(key);
+      if (!raw) {
+        return false;
+      }
+      try {
+        const val = this.getItem(key);
+        if (val === null || val === undefined) {
           return false;
         }
+      } catch {
+        return false;
       }
     }
     return true;

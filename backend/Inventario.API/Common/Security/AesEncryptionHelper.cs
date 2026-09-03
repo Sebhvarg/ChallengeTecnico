@@ -6,9 +6,15 @@ namespace Inventario.API.Common.Security;
 
 public static class AesEncryptionHelper
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true
+    };
+
     public static (string Payload, string Iv) EncryptObject<T>(T data, string secretKey)
     {
-        var json = JsonSerializer.Serialize(data);
+        var json = JsonSerializer.Serialize(data, JsonOptions);
         return EncryptString(json, secretKey);
     }
 
@@ -42,7 +48,7 @@ public static class AesEncryptionHelper
     public static T? DecryptObject<T>(string payloadBase64, string ivHex, string secretKey)
     {
         var json = DecryptString(payloadBase64, ivHex, secretKey);
-        return JsonSerializer.Deserialize<T>(json);
+        return JsonSerializer.Deserialize<T>(json, JsonOptions);
     }
 
     public static string DecryptString(string payloadBase64, string ivHex, string secretKey)
