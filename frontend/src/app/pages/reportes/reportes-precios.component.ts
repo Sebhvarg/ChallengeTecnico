@@ -16,6 +16,7 @@ export class ReportesPreciosComponent implements OnInit {
 
   @ViewChild('precioTpl', { static: true }) precioTpl!: TemplateRef<any>;
   @ViewChild('totalTpl', { static: true }) totalTpl!: TemplateRef<any>;
+  @ViewChild('pvpTpl', { static: true }) pvpTpl!: TemplateRef<any>;
 
   columnas: TableColumn<ReportePrecioProducto>[] = [];
   reporte = signal<ReportePrecioProducto[]>([]);
@@ -32,23 +33,33 @@ export class ReportesPreciosComponent implements OnInit {
     this.reporteService.getReportePreciosPorProveedor(this.filtro).subscribe({
       next: (res) => {
         if (res.exito && res.datos) {
-          // Extraer nombres únicos de los proveedores ordenados y calcular total por cada fila
+          // Extraer nombres únicos de los proveedores ordenados y calcular total y PVP por cada fila
           const provSet = new Set<string>();
+          res.datos.forEach(item => {
+            Object.keys(item.preciosPorProveedor || {}).forEach(prov => provSet.add(prov));
+          });
+
+          const proveedores = Array.from(provSet).sort();
+          this.listaProveedores.set(proveedores);
+          const cantProveedores = proveedores.length;
+
           const datosCalculados = res.datos.map(item => {
             const sumFila = this.calcularTotalProducto(item);
-            Object.keys(item.preciosPorProveedor || {}).forEach(prov => provSet.add(prov));
+            const preciosValidos = Object.values(item.preciosPorProveedor || {})
+              .map(v => Number(v) || 0)
+              .filter(v => v > 0);
+            const cantConPrecio = preciosValidos.length;
+            const pvpFila = cantConPrecio > 0 ? sumFila / cantConPrecio : 0;
             return {
               ...item,
-              total: sumFila
+              total: sumFila,
+              pvp: pvpFila
             };
           });
 
           this.reporte.set(datosCalculados);
 
-          const proveedores = Array.from(provSet).sort();
-          this.listaProveedores.set(proveedores);
-
-          // Configurar columnas dinámicas: Producto + Proveedores + Columna Total
+          // Configurar columnas dinámicas: Producto + Proveedores + Columna Total + Columna PVP
           this.columnas = [
             { key: 'producto', header: 'PRODUCTO', cellClass: 'font-bold text-slate-900' },
             ...proveedores.map(prov => ({
@@ -62,6 +73,13 @@ export class ReportesPreciosComponent implements OnInit {
               header: 'TOTAL PRODUCTO',
               align: 'right' as const,
               template: this.totalTpl,
+              width: '160px'
+            },
+            {
+              key: 'pvp',
+              header: 'PVP',
+              align: 'right' as const,
+              template: this.pvpTpl,
               width: '160px'
             }
           ];
@@ -80,6 +98,17 @@ export class ReportesPreciosComponent implements OnInit {
   calcularTotalProducto(item: ReportePrecioProducto): number {
     if (!item.preciosPorProveedor) return 0;
     return Object.values(item.preciosPorProveedor).reduce((acc, val) => acc + (Number(val) || 0), 0);
+  }
+
+  // Calcular el promedio de precios (PVP) para un producto específico: suma total / cantidad de proveedores con precio disponible
+  calcularPvpProducto(item: ReportePrecioProducto): number {
+    if (!item.preciosPorProveedor) return 0;
+    const preciosValidos = Object.values(item.preciosPorProveedor)
+      .map(v => Number(v) || 0)
+      .filter(v => v > 0);
+    if (preciosValidos.length === 0) return 0;
+    const total = item.total ?? this.calcularTotalProducto(item);
+    return total / preciosValidos.length;
   }
 
   // Calcular la suma total de una columna de proveedor

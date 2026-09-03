@@ -97,4 +97,11 @@
     </span>
   </ng-template>
 
+  <!-- Template para Columna de PVP (Promedio de la Fila) -->
+  <ng-template #pvpTpl let-item="item" let-value="value">
+    <span class="font-mono font-extrabold text-blue-800 bg-blue-50 px-3 py-1 rounded-lg border border-blue-200 text-sm inline-block shadow-xs">
+      ${{ (value ?? item?.pvp ?? calcularPvpProducto(item)) | number:'1.2-2' }}
+    </span>
+  </ng-template>
+
 </div>
