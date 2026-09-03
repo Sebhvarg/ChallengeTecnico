@@ -147,10 +147,41 @@ public class ProveedorService : IProveedorService
             throw new BadRequestException($"El nombre '{nombre}' ya está en uso por otro proveedor.");
         }
 
+        var estadoPrevio = proveedor.Estado;
         proveedor.Nombre = nombre;
         proveedor.Email = email;
         proveedor.Celular = dto.Celular?.Trim();
         proveedor.Estado = dto.Estado;
+
+        // Si se reactivó el proveedor mediante la edición, reactivar también sus lotes y productos vinculados
+        if (!estadoPrevio && dto.Estado)
+        {
+            var lotes = await _context.ProveedorXProductos
+                .Include(pxp => pxp.Producto)
+                .Where(pxp => pxp.IdProveedor == id)
+                .ToListAsync();
+
+            foreach (var pxp in lotes)
+            {
+                pxp.Estado = true;
+                if (pxp.Producto != null)
+                {
+                    pxp.Producto.Estado = true;
+                }
+            }
+        }
+        else if (estadoPrevio && !dto.Estado)
+        {
+            // Si se desactivó el proveedor mediante la edición, desactivar sus lotes vinculados
+            var lotes = await _context.ProveedorXProductos
+                .Where(pxp => pxp.IdProveedor == id)
+                .ToListAsync();
+
+            foreach (var pxp in lotes)
+            {
+                pxp.Estado = false;
+            }
+        }
 
         await _context.SaveChangesAsync();
         _logger.LogInformation("Proveedor ID {Id} actualizado correctamente.", id);
@@ -182,7 +213,42 @@ public class ProveedorService : IProveedorService
         }
 
         await _context.SaveChangesAsync();
-        _logger.LogInformation("Proveedor ID {Id} desactivado exitosamente.", id);
+        _logger.LogInformation("Proveedor ID {Id} desactivado exitosamente junto con sus lotes asociados.", id);
+
+        return true;
+    }
+
+    public async Task<bool> ReactivarProveedorAsync(int id)
+    {
+        var proveedor = await _context.Proveedores
+            .Include(p => p.ProveedorXProductos)
+                .ThenInclude(pxp => pxp.Producto)
+            .FirstOrDefaultAsync(p => p.Id == id);
+
+        if (proveedor == null)
+        {
+            throw new NotFoundException($"El proveedor con ID {id} no fue encontrado.");
+        }
+
+        if (proveedor.Estado)
+        {
+            throw new BadRequestException("El proveedor ya se encuentra activo.");
+        }
+
+        proveedor.Estado = true;
+
+        // Reactivar todos los lotes y productos asociados a este proveedor
+        foreach (var pxp in proveedor.ProveedorXProductos)
+        {
+            pxp.Estado = true;
+            if (pxp.Producto != null)
+            {
+                pxp.Producto.Estado = true;
+            }
+        }
+
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("Proveedor ID {Id} reactivado exitosamente junto con sus lotes y productos asociados.", id);
 
         return true;
     }

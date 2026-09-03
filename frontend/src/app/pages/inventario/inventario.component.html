@@ -1,10 +1,10 @@
 <div class="space-y-6">
   
-  <!-- Header -->
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+  <!-- Encabezado de la Vista -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-brand-primary p-6 rounded-2xl shadow-md text-white">
     <div>
-      <h1 class="text-xl sm:text-2xl font-extrabold text-slate-800 tracking-tight">Control de Stock e Inventario</h1>
-      <p class="text-xs sm:text-sm text-slate-500 mt-1">
+      <h1 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight">Control de Stock e Inventario</h1>
+      <p class="text-xs sm:text-sm text-pink-100 mt-1">
         Monitoreo de existencias por lote, proveedor y movimientos de almacén.
       </p>
     </div>
@@ -73,10 +73,8 @@
   </ng-template>
 
   <ng-template #stockTpl let-item>
-    <span 
-      [ngClass]="item.stockProducto > 10 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-brand-secondary-light text-brand-secondary-dark border-brand-secondary-muted'"
-      class="text-xs font-bold px-3 py-1 rounded-full border inline-block">
-      {{ item.stockProducto }} unids
+    <span class="font-medium text-slate-700 font-mono">
+      {{ item.stockProducto }} 
     </span>
   </ng-template>
 
@@ -110,7 +108,7 @@
         </div>
         <div class="text-right">
           <span class="text-slate-500">Stock Actual Registrado:</span>
-          <p class="font-black text-brand-primary text-sm mt-0.5">{{ itemSeleccionado?.stockProducto }} unids</p>
+          <p class="font-black text-brand-primary text-sm mt-0.5">{{ itemSeleccionado?.stockProducto }} unidades </p>
         </div>
       </div>
 
@@ -139,7 +137,7 @@
               min="0" 
               required 
               class="w-full text-center font-black text-2xl py-2 px-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-primary text-slate-900 bg-white shadow-inner"/>
-            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 pointer-events-none">unids</span>
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 pointer-events-none">unidades</span>
           </div>
 
           <!-- Botón Incremento (+1) -->

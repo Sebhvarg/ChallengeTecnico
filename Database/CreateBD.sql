@@ -113,8 +113,8 @@ GO
 -- =======================================================
 INSERT INTO Usuario (nombres, apellidos, usuario, email, contrasenaHash, rol)
 VALUES 
-('Carlos', 'Mendoza', 'admin', 'admin@prueba.com', '$2a$11$e876yR3N6Q8uO4UoW1v3h.2Lq0Z6m1eO4xW1B8vVqT7xL5fW3tq6S', 1),
-('Laura', 'Paredes', 'operador1', 'operador@prueba.com', '$2a$11$e876yR3N6Q8uO4UoW1v3h.2Lq0Z6m1eO4xW1B8vVqT7xL5fW3tq6S', 2);
+('Carlos', 'Mendoza', 'admin', 'admin@prueba.com', '$2a$11$ie6g.6Y8JxEu3w9undaGr.npgr0icjEO23SMrUVqrw6l7exjulxHi', 1),
+('Laura', 'Paredes', 'operador1', 'operador@prueba.com', '$2a$11$ie6g.6Y8JxEu3w9undaGr.npgr0icjEO23SMrUVqrw6l7exjulxHi', 2);
 GO
 
 -- =======================================================
@@ -127,12 +127,14 @@ VALUES
 (1, 'Gestión de Productos', '/productos', 1),
 (1, 'Gestión de Proveedores', '/proveedores', 1),
 (1, 'Gestión de Inventario', '/inventario', 1),
+(1, 'Gestión de Usuarios', '/usuarios', 1),
 (1, 'Reporte de Precios', '/reportes/precios', 1),
 
--- Rutas Operador (Solo consulta y gestión de stock)
+-- Rutas Operador / Proveedor (Consulta de productos, stock y reporte de precios)
 (2, 'Dashboard', '/dashboard', 1),
 (2, 'Consulta de Productos', '/productos', 1),
-(2, 'Control de Stock', '/inventario', 1);
+(2, 'Control de Stock', '/inventario', 1),
+(2, 'Reporte de Precios', '/reportes/precios', 1);
 GO
 
 -- =======================================================

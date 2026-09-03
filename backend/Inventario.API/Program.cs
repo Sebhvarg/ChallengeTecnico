@@ -55,6 +55,7 @@ try
     builder.Services.AddScoped<ICategoriaService, CategoriaService>();
     builder.Services.AddScoped<IInventarioService, InventarioService>();
     builder.Services.AddScoped<IReporteService, ReporteService>();
+    builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 
     // 4. Configuración de Controladores y Serialización JSON
     builder.Services.AddControllers()

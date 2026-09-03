@@ -11,4 +11,5 @@ public interface IProveedorService
     Task<ProveedorDto> CrearProveedorAsync(CrearProveedorDto dto);
     Task<ProveedorDto> ActualizarProveedorAsync(int id, ActualizarProveedorDto dto);
     Task<bool> EliminarProveedorAsync(int id);
+    Task<bool> ReactivarProveedorAsync(int id);
 }

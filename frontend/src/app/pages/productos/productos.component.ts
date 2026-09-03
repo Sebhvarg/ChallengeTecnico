@@ -147,6 +147,14 @@ export class ProductosComponent implements OnInit {
     }
   }
 
+  // Expresiones regulares para validación de campos
+  private readonly REGEX_CODIGO = /^[A-Za-z0-9]{1,4}$/;
+  private readonly REGEX_NOMBRE = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.,\-_#/()]{2,80}$/;
+  private readonly REGEX_DESCRIPCION = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.,\-_#/()]{0,200}$/;
+  private readonly REGEX_LOTE = /^(LOT-\d{4}-\d{2}|[A-Za-z0-9\-_]{3,11})$/;
+  private readonly REGEX_PRECIO_COSTO = /^\d+(\.\d{1,2})?$/;
+  private readonly REGEX_STOCK = /^[1-9]\d*$/;
+
   // --- Crear Producto ---
   abrirModalCrear(): void {
     this.formCrear = this.getInitFormCrear();
@@ -157,17 +165,63 @@ export class ProductosComponent implements OnInit {
   }
 
   guardarCrear(): void {
-    if (!this.formCrear.codigo || !this.formCrear.nombre || !this.formCrear.numeroLote) {
-      this.notify.warning('Complete los campos obligatorios (Código, Nombre y Número de Lote).');
+    // 1. Validación de Código con Regex
+    if (!this.formCrear.codigo || !this.REGEX_CODIGO.test(this.formCrear.codigo.trim())) {
+      this.notify.warning('El código debe ser alfanumérico y tener máximo 4 caracteres (ej: M050, S020, P001).');
       return;
     }
+
+    // 2. Validación de Nombre con Regex
+    if (!this.formCrear.nombre || !this.REGEX_NOMBRE.test(this.formCrear.nombre.trim())) {
+      this.notify.warning('El nombre del producto debe contener entre 2 y 80 caracteres válidos.');
+      return;
+    }
+
+    // 3. Validación de Descripción con Regex
+    if (this.formCrear.descripcion && !this.REGEX_DESCRIPCION.test(this.formCrear.descripcion.trim())) {
+      this.notify.warning('La descripción contiene caracteres no permitidos o excede los 200 caracteres.');
+      return;
+    }
+
+    // 4. Validación de Proveedor
+    if (!this.formCrear.idProveedor || this.formCrear.idProveedor <= 0) {
+      this.notify.warning('Debe seleccionar un proveedor válido.');
+      return;
+    }
+
+    // 5. Validación de Número de Lote con Regex
+    if (!this.formCrear.numeroLote || !this.REGEX_LOTE.test(this.formCrear.numeroLote.trim())) {
+      this.notify.warning('El número de lote debe tener formato válido (ej: LOT-0001-01 o entre 3 y 11 caracteres alfanuméricos).');
+      return;
+    }
+
+    // 6. Validación de Costo y Precio con Regex
+    if (!this.REGEX_PRECIO_COSTO.test(String(this.formCrear.costoProducto)) || Number(this.formCrear.costoProducto) < 0) {
+      this.notify.warning('El costo debe ser un valor numérico positivo con máximo 2 decimales.');
+      return;
+    }
+
+    if (!this.REGEX_PRECIO_COSTO.test(String(this.formCrear.precioProducto)) || Number(this.formCrear.precioProducto) < 0) {
+      this.notify.warning('El precio de venta debe ser un valor numérico positivo con máximo 2 decimales.');
+      return;
+    }
+
+    // 7. Validación de Stock Inicial con Regex
+    if (!this.REGEX_STOCK.test(String(this.formCrear.stockProducto))) {
+      this.notify.warning('El stock inicial debe ser un número entero mayor o igual a 1.');
+      return;
+    }
+
+    this.formCrear.codigo = this.formCrear.codigo.trim().toUpperCase();
+    this.formCrear.numeroLote = this.formCrear.numeroLote.trim().toUpperCase();
+    this.formCrear.nombre = this.formCrear.nombre.trim();
 
     this.guardando.set(true);
     this.productoService.crearProducto(this.formCrear).subscribe({
       next: () => {
         this.guardando.set(false);
         this.mostrarModalCrear.set(false);
-        this.notify.success('Producto e inventario inicial registrados.');
+        this.notify.success('Producto e inventario inicial registrados exitosamente.');
         this.cargarProductos();
       },
       error: () => this.guardando.set(false)
@@ -195,15 +249,20 @@ export class ProductosComponent implements OnInit {
   }
 
   guardarEditar(): void {
-    if (!this.formEditar.nombre) {
-      this.notify.warning('El nombre del producto es obligatorio.');
+    if (!this.formEditar.nombre || !this.REGEX_NOMBRE.test(this.formEditar.nombre.trim())) {
+      this.notify.warning('El nombre del producto debe contener entre 2 y 80 caracteres válidos.');
+      return;
+    }
+
+    if (this.formEditar.descripcion && !this.REGEX_DESCRIPCION.test(this.formEditar.descripcion.trim())) {
+      this.notify.warning('La descripción contiene caracteres no permitidos o excede los 200 caracteres.');
       return;
     }
 
     this.guardando.set(true);
     this.productoService.actualizarProducto(this.formEditar.id, {
-      nombre: this.formEditar.nombre,
-      descripcion: this.formEditar.descripcion,
+      nombre: this.formEditar.nombre.trim(),
+      descripcion: this.formEditar.descripcion?.trim(),
       idCategoria: this.formEditar.idCategoria ? Number(this.formEditar.idCategoria) : undefined,
       estado: this.formEditar.estado
     }).subscribe({
@@ -232,24 +291,46 @@ export class ProductosComponent implements OnInit {
   }
 
   guardarLote(): void {
-    if (!this.formLote.numeroLote || !this.formLote.idProveedor) {
-      this.notify.warning('Seleccione el proveedor e ingrese el número de lote.');
+    if (!this.formLote.idProveedor || this.formLote.idProveedor <= 0) {
+      this.notify.warning('Debe seleccionar un proveedor válido.');
       return;
     }
+
+    if (!this.formLote.numeroLote || !this.REGEX_LOTE.test(this.formLote.numeroLote.trim())) {
+      this.notify.warning('El número de lote debe tener formato válido (ej: LOT-0001-01 o entre 3 y 11 caracteres alfanuméricos).');
+      return;
+    }
+
+    if (!this.REGEX_PRECIO_COSTO.test(String(this.formLote.costoProducto)) || Number(this.formLote.costoProducto) < 0) {
+      this.notify.warning('El costo debe ser un valor numérico positivo con máximo 2 decimales.');
+      return;
+    }
+
+    if (!this.REGEX_PRECIO_COSTO.test(String(this.formLote.precioProducto)) || Number(this.formLote.precioProducto) < 0) {
+      this.notify.warning('El precio de venta debe ser un valor numérico positivo con máximo 2 decimales.');
+      return;
+    }
+
+    if (!this.REGEX_STOCK.test(String(this.formLote.stockProducto))) {
+      this.notify.warning('El stock inicial debe ser un número entero mayor o igual a 1.');
+      return;
+    }
+
+    this.formLote.numeroLote = this.formLote.numeroLote.trim().toUpperCase();
 
     this.guardando.set(true);
     this.productoService.agregarLote({
       idProducto: this.formLote.idProducto,
       idProveedor: Number(this.formLote.idProveedor),
       numeroLote: this.formLote.numeroLote,
-      costoProducto: this.formLote.costoProducto,
-      precioProducto: this.formLote.precioProducto,
-      stockProducto: this.formLote.stockProducto
+      costoProducto: Number(this.formLote.costoProducto),
+      precioProducto: Number(this.formLote.precioProducto),
+      stockProducto: Number(this.formLote.stockProducto)
     }).subscribe({
       next: () => {
         this.guardando.set(false);
         this.mostrarModalLote.set(false);
-        this.notify.success('Lote y stock agregados al producto.');
+        this.notify.success('Lote agregado al producto exitosamente.');
         this.cargarProductos();
       },
       error: () => this.guardando.set(false)

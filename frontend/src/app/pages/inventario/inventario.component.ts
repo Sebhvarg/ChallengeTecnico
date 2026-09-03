@@ -144,9 +144,22 @@ export class InventarioComponent implements OnInit {
     }
   }
 
+  private readonly REGEX_STOCK = /^\d+$/;
+  private readonly REGEX_DECIMAL = /^\d+(\.\d{1,2})?$/;
+
   guardarAjuste(): void {
-    if (this.formAjuste.cantidad < 0) {
-      this.notify.warning('El stock no puede ser negativo.');
+    if (!this.REGEX_STOCK.test(String(this.formAjuste.cantidad)) || Number(this.formAjuste.cantidad) < 0) {
+      this.notify.warning('El stock debe ser un número entero no negativo (0 o mayor).');
+      return;
+    }
+
+    if (this.formAjuste.nuevoCosto !== undefined && (!this.REGEX_DECIMAL.test(String(this.formAjuste.nuevoCosto)) || Number(this.formAjuste.nuevoCosto) < 0)) {
+      this.notify.warning('El costo debe ser un número positivo con máximo 2 decimales.');
+      return;
+    }
+
+    if (this.formAjuste.nuevoPrecio !== undefined && (!this.REGEX_DECIMAL.test(String(this.formAjuste.nuevoPrecio)) || Number(this.formAjuste.nuevoPrecio) < 0)) {
+      this.notify.warning('El precio debe ser un número positivo con máximo 2 decimales.');
       return;
     }
 

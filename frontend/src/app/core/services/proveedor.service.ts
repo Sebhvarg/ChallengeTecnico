@@ -44,4 +44,8 @@ export class ProveedorService {
   eliminarProveedor(id: number): Observable<ApiResponse<boolean>> {
     return this.http.delete<ApiResponse<boolean>>(`${this.apiUrl}/${id}`);
   }
+
+  reactivarProveedor(id: number): Observable<ApiResponse<boolean>> {
+    return this.http.post<ApiResponse<boolean>>(`${this.apiUrl}/${id}/reactivar`, {});
+  }
 }

@@ -1,87 +1,29 @@
 <div class="space-y-6">
   
-  <!-- Encabezado de Bienvenida -->
-  <div class="bg-brand-primary rounded-2xl p-6 sm:p-8 text-white shadow-md">
-    <div>
-      <span class="inline-block px-3 py-1 bg-white/15 rounded-full text-xs font-bold uppercase tracking-wider mb-3 text-brand-secondary">
-        Panel de Control
-      </span>
-      <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">
-        Hola, {{ authService.currentUser()?.nombres }} {{ authService.currentUser()?.apellidos }}
-      </h1>
-      <p class="text-pink-100 text-sm sm:text-base mt-2 max-w-2xl">
-        Bienvenido al Sistema de Gestión de Inventario. Aquí tienes el resumen en tiempo real de artículos, existencias y proveedores.
-      </p>
+  <!-- Encabezado de Bienvenida con Ilustración al Lado Izquierdo -->
+  <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+    <!-- Imagen de Bienvenida al lado izquierdo -->
+    <div class="shrink-0 flex items-center justify-center">
+      <img 
+        src="/assets/img/bienvenida.webp" 
+        alt="Bienvenida" 
+        class="h-32 sm:h-36 md:h-44 w-auto object-contain select-none pointer-events-none drop-shadow-sm" />
     </div>
-  </div>
 
-  <!-- Tarjetas de Métricas -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-    
-    <!-- Total Productos -->
-    <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Productos</p>
-          <h3 class="text-3xl font-extrabold text-slate-800 mt-2">{{ totalProductos() }}</h3>
-          <p class="text-xs text-slate-400 mt-1">Registrados en catálogo</p>
-        </div>
-        <div class="w-12 h-12 rounded-xl bg-brand-primary-light text-brand-primary flex items-center justify-center">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-          </svg>
-        </div>
+    <!-- Banner de Bienvenida -->
+    <div class="flex-1 w-full bg-brand-primary rounded-2xl p-6 sm:p-8 text-white shadow-md flex flex-col justify-center">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+          Hola,
+          <span class="text-brand-secondary">
+            {{ authService.currentUser()?.nombres }} {{ authService.currentUser()?.apellidos }}!
+          </span>
+        </h1>
+        <p class="text-pink-100 text-sm sm:text-base mt-2 leading-relaxed">
+          Bienvenido al Sistema de Gestión de Inventario. Aquí tienes el resumen en tiempo real de artículos, existencias y proveedores.
+        </p>
       </div>
     </div>
-
-    <!-- Total Stock -->
-    <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Stock Total</p>
-          <h3 class="text-3xl font-extrabold text-slate-800 mt-2">{{ totalStock() }}</h3>
-          <p class="text-xs text-emerald-600 font-semibold mt-1">Unidades disponibles</p>
-        </div>
-        <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-          </svg>
-        </div>
-      </div>
-    </div>
-
-    <!-- Proveedores Activos -->
-    <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Proveedores</p>
-          <h3 class="text-3xl font-extrabold text-slate-800 mt-2">{{ totalProveedores() }}</h3>
-          <p class="text-xs text-brand-primary font-semibold mt-1">Empresas registradas</p>
-        </div>
-        <div class="w-12 h-12 rounded-xl bg-brand-secondary-light text-brand-secondary-dark flex items-center justify-center border border-brand-secondary-muted/40">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-          </svg>
-        </div>
-      </div>
-    </div>
-
-    <!-- Alerta Stock Bajo -->
-    <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Stock Crítico</p>
-          <h3 class="text-3xl font-extrabold text-rose-600 mt-2">{{ stockBajo() }}</h3>
-          <p class="text-xs text-rose-500 font-semibold mt-1">Lotes con ≤ 10 unids.</p>
-        </div>
-        <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-          </svg>
-        </div>
-      </div>
-    </div>
-
   </div>
 
   <!-- Accesos Rápidos y Tabla Resumen -->
@@ -129,10 +71,8 @@
       </ng-template>
 
       <ng-template #stockTpl let-item>
-        <span 
-          [ngClass]="item.stockProducto > 10 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-brand-secondary-light text-brand-secondary-dark border-brand-secondary-muted'"
-          class="text-xs font-bold px-2.5 py-1 rounded-full border inline-block">
-          {{ item.stockProducto }} unids
+        <span class="font-medium text-slate-700 font-mono">
+          {{ item.stockProducto }}
         </span>
       </ng-template>
     </div>
@@ -195,5 +135,75 @@
     </div>
 
   </div>
+
+    <!-- Tarjetas de Métricas -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+    
+    <!-- Total Productos -->
+    <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Productos</p>
+          <h3 class="text-3xl font-extrabold text-slate-800 mt-2">{{ totalProductos() }}</h3>
+          <p class="text-xs text-slate-400 mt-1">Registrados en catálogo</p>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-brand-primary-light text-brand-primary flex items-center justify-center">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Stock -->
+    <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Stock Total</p>
+          <h3 class="text-3xl font-extrabold text-slate-800 mt-2">{{ totalStock() }}</h3>
+          <p class="text-xs text-emerald-600 font-semibold mt-1">Unidades disponibles</p>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Proveedores Activos -->
+    <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Proveedores</p>
+          <h3 class="text-3xl font-extrabold text-slate-800 mt-2">{{ totalProveedores() }}</h3>
+          <p class="text-xs text-brand-primary font-semibold mt-1">Empresas registradas</p>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-brand-secondary-light text-brand-secondary-dark flex items-center justify-center border border-brand-secondary-muted/40">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alerta Stock Bajo -->
+    <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Stock Crítico</p>
+          <h3 class="text-3xl font-extrabold text-rose-600 mt-2">{{ stockBajo() }}</h3>
+          <p class="text-xs text-rose-500 font-semibold mt-1">Lotes con ≤ 10 unidades.</p>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
 
 </div>

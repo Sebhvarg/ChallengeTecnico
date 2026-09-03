@@ -4,11 +4,13 @@ namespace Inventario.API.DTOs.Producto;
 
 public class ActualizarProductoDto
 {
-    [Required(ErrorMessage = "El nombre es obligatorio")]
-    [StringLength(80, ErrorMessage = "El nombre no puede exceder 80 caracteres")]
+    [Required(ErrorMessage = "El nombre es obligatorio.")]
+    [StringLength(80, ErrorMessage = "El nombre no puede exceder 80 caracteres.")]
+    [RegularExpression(@"^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.,\-_#/()]{2,80}$", ErrorMessage = "El nombre contiene caracteres no permitidos (solo letras, números y puntuación básica).")]
     public string Nombre { get; set; } = string.Empty;
 
-    [StringLength(200, ErrorMessage = "La descripción no puede exceder 200 caracteres")]
+    [StringLength(200, ErrorMessage = "La descripción no puede exceder 200 caracteres.")]
+    [RegularExpression(@"^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.,\-_#/()]{0,200}$", ErrorMessage = "La descripción contiene caracteres no permitidos.")]
     public string? Descripcion { get; set; }
 
     public int? IdCategoria { get; set; }

@@ -104,4 +104,17 @@ public class ProveedoresController : ControllerBase
         var resultado = await _proveedorService.EliminarProveedorAsync(id);
         return Ok(ApiResponse<bool>.Ok(resultado, "Proveedor desactivado exitosamente."));
     }
+
+    /// <summary>
+    /// Reactiva un proveedor inactivo y sus lotes/productos asociados.
+    /// </summary>
+    [HttpPost("{id:int}/reactivar")]
+    [Authorize(Roles = "Administrador")]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Reactivar(int id)
+    {
+        var resultado = await _proveedorService.ReactivarProveedorAsync(id);
+        return Ok(ApiResponse<bool>.Ok(resultado, "Proveedor, lotes y productos asociados reactivados exitosamente."));
+    }
 }

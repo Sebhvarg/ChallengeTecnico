@@ -82,19 +82,38 @@ export class ProveedoresComponent implements OnInit {
     }
   }
 
+  // Expresiones regulares para validación de Proveedores
+  private readonly REGEX_NOMBRE_PROV = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.,&'\-_/()]{2,80}$/;
+  private readonly REGEX_EMAIL = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  private readonly REGEX_CELULAR = /^$|^\d{7,10}$/;
+
   abrirModalCrear(): void {
     this.formCrear = { nombre: '', email: '', celular: '' };
     this.mostrarModalCrear.set(true);
   }
 
   guardarCrear(): void {
-    if (!this.formCrear.nombre || !this.formCrear.email) {
-      this.notify.warning('Nombre y correo electrónico son obligatorios.');
+    if (!this.formCrear.nombre || !this.REGEX_NOMBRE_PROV.test(this.formCrear.nombre.trim())) {
+      this.notify.warning('El nombre del proveedor debe tener entre 2 y 80 caracteres válidos.');
+      return;
+    }
+
+    if (!this.formCrear.email || !this.REGEX_EMAIL.test(this.formCrear.email.trim())) {
+      this.notify.warning('Ingrese un correo electrónico válido (ej: proveedor@empresa.com).');
+      return;
+    }
+
+    if (this.formCrear.celular && !this.REGEX_CELULAR.test(this.formCrear.celular.trim())) {
+      this.notify.warning('El celular/teléfono debe contener entre 7 y 10 dígitos numéricos.');
       return;
     }
 
     this.guardando.set(true);
-    this.proveedorService.crearProveedor(this.formCrear).subscribe({
+    this.proveedorService.crearProveedor({
+      nombre: this.formCrear.nombre.trim(),
+      email: this.formCrear.email.trim(),
+      celular: this.formCrear.celular?.trim() || ''
+    }).subscribe({
       next: () => {
         this.guardando.set(false);
         this.mostrarModalCrear.set(false);
@@ -117,16 +136,26 @@ export class ProveedoresComponent implements OnInit {
   }
 
   guardarEditar(): void {
-    if (!this.formEditar.nombre || !this.formEditar.email) {
-      this.notify.warning('Nombre y correo electrónico son obligatorios.');
+    if (!this.formEditar.nombre || !this.REGEX_NOMBRE_PROV.test(this.formEditar.nombre.trim())) {
+      this.notify.warning('El nombre del proveedor debe tener entre 2 y 80 caracteres válidos.');
+      return;
+    }
+
+    if (!this.formEditar.email || !this.REGEX_EMAIL.test(this.formEditar.email.trim())) {
+      this.notify.warning('Ingrese un correo electrónico válido (ej: proveedor@empresa.com).');
+      return;
+    }
+
+    if (this.formEditar.celular && !this.REGEX_CELULAR.test(this.formEditar.celular.trim())) {
+      this.notify.warning('El celular/teléfono debe contener entre 7 y 10 dígitos numéricos.');
       return;
     }
 
     this.guardando.set(true);
     this.proveedorService.actualizarProveedor(this.formEditar.id, {
-      nombre: this.formEditar.nombre,
-      email: this.formEditar.email,
-      celular: this.formEditar.celular,
+      nombre: this.formEditar.nombre.trim(),
+      email: this.formEditar.email.trim(),
+      celular: this.formEditar.celular?.trim() || '',
       estado: this.formEditar.estado
     }).subscribe({
       next: () => {
@@ -147,7 +176,22 @@ export class ProveedoresComponent implements OnInit {
     if (ok) {
       this.proveedorService.eliminarProveedor(item.id).subscribe({
         next: () => {
-          this.notify.success('Proveedor desactivado.');
+          this.notify.success('Proveedor desactivado correctamente.');
+          this.cargarProveedores();
+        }
+      });
+    }
+  }
+
+  async reactivar(item: Proveedor): Promise<void> {
+    const ok = await this.notify.confirm(
+      '¿Reactivar proveedor?',
+      `Se reactivará el proveedor "${item.nombre}" junto con todos sus productos y lotes asociados.`
+    );
+    if (ok) {
+      this.proveedorService.reactivarProveedor(item.id).subscribe({
+        next: () => {
+          this.notify.success('Proveedor y productos asociados reactivados exitosamente.');
           this.cargarProveedores();
         }
       });

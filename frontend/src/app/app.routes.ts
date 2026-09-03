@@ -39,6 +39,11 @@ export const routes: Routes = [
         canActivate: [roleGuard]
       },
       {
+        path: 'usuarios',
+        loadComponent: () => import('./pages/usuarios/usuarios.component').then(m => m.UsuariosComponent),
+        canActivate: [roleGuard]
+      },
+      {
         path: 'reportes/precios',
         loadComponent: () => import('./pages/reportes/reportes-precios.component').then(m => m.ReportesPreciosComponent),
         canActivate: [roleGuard]

@@ -683,3 +683,381 @@ BEGIN
     END CATCH
 END;
 GO
+
+CREATE OR ALTER PROCEDURE spReactivarProveedor
+    @idProveedor INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- 1. Validar existencia del proveedor
+    IF @idProveedor IS NULL OR NOT EXISTS (SELECT 1 FROM Proveedor WHERE id = @idProveedor)
+    BEGIN
+        RAISERROR('El proveedor especificado no existe.', 16, 1);
+        RETURN;
+    END
+
+    -- 2. Validar si ya se encuentra activo
+    IF EXISTS (SELECT 1 FROM Proveedor WHERE id = @idProveedor AND estado = 1)
+    BEGIN
+        RAISERROR('El proveedor ya se encuentra activo.', 16, 1);
+        RETURN;
+    END
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Paso 1: Reactivación del proveedor
+        UPDATE Proveedor
+        SET estado = 1
+        WHERE id = @idProveedor;
+
+        -- Paso 2: Reactivación de los lotes vinculados a este proveedor
+        UPDATE ProveedorXProducto
+        SET estado = 1
+        WHERE idProveedor = @idProveedor;
+
+        -- Paso 3: Reactivación de los productos asociados a este proveedor
+        UPDATE p
+        SET p.estado = 1
+        FROM Producto p
+        INNER JOIN ProveedorXProducto pxp ON p.id = pxp.idProducto
+        WHERE pxp.idProveedor = @idProveedor;
+
+        COMMIT TRANSACTION;
+
+        -- Retornar confirmación
+        SELECT 
+            @idProveedor AS idProveedor,
+            1 AS estado,
+            'Proveedor, sus lotes y productos asociados han sido reactivados exitosamente.' AS mensaje;
+
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+
+        RAISERROR(@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END;
+GO
+
+-- ============================================================================
+-- CRUD DE LA TABLA USUARIO
+-- ============================================================================
+
+USE Prueba;
+GO
+
+-- R (Read): Búsqueda y Lectura Paginada de Usuarios (Excluyendo Admin)
+CREATE OR ALTER PROCEDURE spBuscarUsuarios
+    @usuario VARCHAR(80) = '',
+    @pagina INT = 1,
+    @tamanoPagina INT = 10
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Normalización de paginación
+    IF @pagina < 1 SET @pagina = 1;
+    IF @tamanoPagina < 1 SET @tamanoPagina = 10;
+    IF @tamanoPagina > 100 SET @tamanoPagina = 100;
+
+    SET @usuario = LTRIM(RTRIM(@usuario));
+
+    SELECT 
+        u.id AS id,
+        u.nombres,
+        u.apellidos,
+        u.usuario,
+        u.email,
+        u.rol AS idRol,
+        r.rol AS rol,
+        u.estado,
+        u.fechaCreacion,
+        COUNT(*) OVER() AS totalregistros
+    FROM Usuario u WITH (NOLOCK)
+    INNER JOIN Roles r WITH (NOLOCK) ON r.id = u.rol
+    WHERE u.usuario <> 'admin' 
+      AND (@usuario IS NULL OR @usuario = '' 
+           OR u.usuario LIKE '%' + @usuario + '%'
+           OR u.nombres LIKE '%' + @usuario + '%'
+           OR u.apellidos LIKE '%' + @usuario + '%'
+           OR u.email LIKE '%' + @usuario + '%')
+    ORDER BY u.id ASC
+    OFFSET (@pagina - 1) * @tamanoPagina ROWS
+    FETCH NEXT @tamanoPagina ROWS ONLY;
+END;
+GO
+
+-- R (Read): Obtener Usuario por ID
+CREATE OR ALTER PROCEDURE spObtenerUsuarioPorId
+    @idUsuario INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        u.id AS id,
+        u.nombres,
+        u.apellidos,
+        u.usuario,
+        u.email,
+        u.rol AS idRol,
+        r.rol AS rol,
+        u.estado,
+        u.fechaCreacion
+    FROM Usuario u WITH (NOLOCK)
+    INNER JOIN Roles r WITH (NOLOCK) ON r.id = u.rol
+    WHERE u.id = @idUsuario;
+END;
+GO
+
+-- C (Create): Crear Usuario
+CREATE OR ALTER PROCEDURE spCrearUsuario
+    @nombres VARCHAR(80),
+    @apellidos VARCHAR(80),
+    @usuario VARCHAR(10),
+    @email VARCHAR(50),
+    @contrasenaHash VARCHAR(255),
+    @idRol INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- 1. Validaciones básicas
+    IF LTRIM(RTRIM(ISNULL(@nombres, ''))) = ''
+    BEGIN
+        RAISERROR('El nombre del usuario es obligatorio.', 16, 1);
+        RETURN;
+    END
+
+    IF LTRIM(RTRIM(ISNULL(@apellidos, ''))) = ''
+    BEGIN
+        RAISERROR('Los apellidos del usuario son obligatorios.', 16, 1);
+        RETURN;
+    END
+
+    IF LTRIM(RTRIM(ISNULL(@usuario, ''))) = ''
+    BEGIN
+        RAISERROR('El nombre de usuario es obligatorio.', 16, 1);
+        RETURN;
+    END
+
+    IF LTRIM(RTRIM(ISNULL(@email, ''))) = ''
+    BEGIN
+        RAISERROR('El correo electrónico es obligatorio.', 16, 1);
+        RETURN;
+    END
+
+    -- 2. Validar existencia del rol
+    IF NOT EXISTS (SELECT 1 FROM Roles WHERE id = @idRol AND estado = 1)
+    BEGIN
+        RAISERROR('El rol especificado no existe o no se encuentra activo.', 16, 1);
+        RETURN;
+    END
+
+    -- 3. Validar duplicidad de nombre de usuario
+    IF EXISTS (SELECT 1 FROM Usuario WHERE LOWER(usuario) = LOWER(LTRIM(RTRIM(@usuario))))
+    BEGIN
+        RAISERROR('El nombre de usuario ya se encuentra registrado.', 16, 1);
+        RETURN;
+    END
+
+    -- 4. Validar duplicidad de email
+    IF EXISTS (SELECT 1 FROM Usuario WHERE LOWER(email) = LOWER(LTRIM(RTRIM(@email))))
+    BEGIN
+        RAISERROR('El correo electrónico ya se encuentra registrado.', 16, 1);
+        RETURN;
+    END
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        INSERT INTO Usuario (nombres, apellidos, usuario, email, contrasenaHash, rol, estado, fechaCreacion)
+        VALUES (
+            LTRIM(RTRIM(@nombres)),
+            LTRIM(RTRIM(@apellidos)),
+            LTRIM(RTRIM(@usuario)),
+            LOWER(LTRIM(RTRIM(@email))),
+            @contrasenaHash,
+            @idRol,
+            1,
+            GETDATE()
+        );
+
+        DECLARE @nuevoId INT = SCOPE_IDENTITY();
+
+        COMMIT TRANSACTION;
+
+        EXEC spObtenerUsuarioPorId @idUsuario = @nuevoId;
+
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+
+        RAISERROR(@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END;
+GO
+
+-- U (Update): Actualizar Usuario
+CREATE OR ALTER PROCEDURE spActualizarUsuario
+    @idUsuario INT,
+    @nombres VARCHAR(80),
+    @apellidos VARCHAR(80),
+    @email VARCHAR(50),
+    @idRol INT,
+    @contrasenaHash VARCHAR(255) = NULL,
+    @estado BIT = 1
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- 1. Validar existencia del usuario
+    IF NOT EXISTS (SELECT 1 FROM Usuario WHERE id = @idUsuario)
+    BEGIN
+        RAISERROR('El usuario especificado no existe.', 16, 1);
+        RETURN;
+    END
+
+    -- 2. Validar rol
+    IF NOT EXISTS (SELECT 1 FROM Roles WHERE id = @idRol AND estado = 1)
+    BEGIN
+        RAISERROR('El rol especificado no es válido.', 16, 1);
+        RETURN;
+    END
+
+    -- 3. Validar unicidad de email
+    IF EXISTS (SELECT 1 FROM Usuario WHERE LOWER(email) = LOWER(LTRIM(RTRIM(@email))) AND id <> @idUsuario)
+    BEGIN
+        RAISERROR('El correo electrónico ya se encuentra en uso por otro usuario.', 16, 1);
+        RETURN;
+    END
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        UPDATE Usuario
+        SET 
+            nombres = LTRIM(RTRIM(@nombres)),
+            apellidos = LTRIM(RTRIM(@apellidos)),
+            email = LOWER(LTRIM(RTRIM(@email))),
+            rol = @idRol,
+            contrasenaHash = CASE WHEN @contrasenaHash IS NOT NULL AND LTRIM(RTRIM(@contrasenaHash)) <> '' 
+                                  THEN @contrasenaHash ELSE contrasenaHash END,
+            estado = @estado
+        WHERE id = @idUsuario;
+
+        COMMIT TRANSACTION;
+
+        EXEC spObtenerUsuarioPorId @idUsuario = @idUsuario;
+
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+
+        RAISERROR(@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END;
+GO
+
+-- D (Delete): Desactivación Lógica de Usuario
+CREATE OR ALTER PROCEDURE spEliminarUsuario
+    @idUsuario INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM Usuario WHERE id = @idUsuario)
+    BEGIN
+        RAISERROR('El usuario especificado no existe.', 16, 1);
+        RETURN;
+    END
+
+    IF EXISTS (SELECT 1 FROM Usuario WHERE id = @idUsuario AND estado = 0)
+    BEGIN
+        RAISERROR('El usuario ya se encuentra inactivo.', 16, 1);
+        RETURN;
+    END
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        UPDATE Usuario
+        SET estado = 0
+        WHERE id = @idUsuario;
+
+        COMMIT TRANSACTION;
+
+        SELECT @idUsuario AS idUsuario, 0 AS estado, 'Usuario desactivado exitosamente.' AS mensaje;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+
+        RAISERROR(@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END;
+GO
+
+-- Reactivación de Usuario
+CREATE OR ALTER PROCEDURE spReactivarUsuario
+    @idUsuario INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM Usuario WHERE id = @idUsuario)
+    BEGIN
+        RAISERROR('El usuario especificado no existe.', 16, 1);
+        RETURN;
+    END
+
+    IF EXISTS (SELECT 1 FROM Usuario WHERE id = @idUsuario AND estado = 1)
+    BEGIN
+        RAISERROR('El usuario ya se encuentra activo.', 16, 1);
+        RETURN;
+    END
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        UPDATE Usuario
+        SET estado = 1
+        WHERE id = @idUsuario;
+
+        COMMIT TRANSACTION;
+
+        SELECT @idUsuario AS idUsuario, 1 AS estado, 'Usuario reactivado exitosamente.' AS mensaje;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+
+        RAISERROR(@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END;
+GO
