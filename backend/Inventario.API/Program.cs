@@ -35,7 +35,7 @@ try
 
     // 2. Base de Datos (Entity Framework Core con SQL Server)
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-        ?? "Server=localhost;Database=Prueba;User Id=sa;Password=UserCachyOS1234!;TrustServerCertificate=True;MultipleActiveResultSets=true;";
+        ?? "Server=localhost,1433;Database=Prueba;User Id=sa;Password=YourStrongPassword123!;TrustServerCertificate=True;MultipleActiveResultSets=true;";
 
     builder.Services.AddDbContext<AppDbContext>(options =>
     {
@@ -81,7 +81,7 @@ try
     });
 
     // 6. Configuración de Autenticación con JWT
-    var jwtKey = builder.Configuration["Jwt:Key"] ?? "Cachy0S$PruebaB6GyS3ba4stianH0lg++n200216202204!";
+    var jwtKey = builder.Configuration["Jwt:Key"] ?? "InventarioApp_JWT_Secret_Key_SuperSecure_2026_Key_MustBe32BytesLong!";
     var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "InventoryApi";
     var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "InventoryAngularClient";
 

@@ -1,6 +1,9 @@
-CREATE DATABASE Prueba
+IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'Prueba')
+BEGIN
+    CREATE DATABASE Prueba;
+END
 GO
-USE Prueba
+USE Prueba;
 GO
 CREATE TABLE Roles(
     id INT IDENTITY(1,1) PRIMARY KEY,

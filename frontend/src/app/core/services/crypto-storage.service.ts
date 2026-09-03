@@ -20,11 +20,11 @@ interface EncryptedEnvelope {
 })
 export class CryptoStorageService {
   // Clave compartida con el Backend (.NET) para descifrado de red y sesión
-  private readonly NETWORK_KEY_SECRET = 'Cachy0S$PruebaB6GyS3ba4stianH0lg++n200216202204!';
+  private readonly NETWORK_KEY_SECRET = 'InventarioApp_JWT_Secret_Key_SuperSecure_2026_Key_MustBe32BytesLong!';
   
   // Claves de bóveda para el sessionStorage local
-  private readonly SECRET_KEY = 'Cachy0S$StorageSecretKey_Challenge_2026!#SecureClientVault';
-  private readonly HMAC_KEY = 'HmacKey_IntegrityVerification_9988776655!@#';
+  private readonly SECRET_KEY = 'InventarioApp_SessionStorage_Key_2026_SecureVault!';
+  private readonly HMAC_KEY = 'InventarioApp_HmacKey_Integrity_9988776655!@#';
 
   private onTamperCallback?: () => void;
 

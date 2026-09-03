@@ -165,7 +165,7 @@ public class AuthService : IAuthService
         };
 
         // 5. Cifrado de la respuesta completa (Rutas, Usuario y Token) para la consola de red
-        var jwtKey = _configuration["Jwt:Key"] ?? "Cachy0S$PruebaB6GyS3ba4stianH0lg++n200216202204!";
+        var jwtKey = _configuration["Jwt:Key"] ?? "InventarioApp_JWT_Secret_Key_SuperSecure_2026_Key_MustBe32BytesLong!";
         var (payload, iv) = AesEncryptionHelper.EncryptObject(rawResponse, jwtKey);
 
         return new EncryptedResponseDto
@@ -198,7 +198,7 @@ public class AuthService : IAuthService
             RolNombre = usuario.Rol.RolNombre
         };
 
-        var jwtKey = _configuration["Jwt:Key"] ?? "Cachy0S$PruebaB6GyS3ba4stianH0lg++n200216202204!";
+        var jwtKey = _configuration["Jwt:Key"] ?? "InventarioApp_JWT_Secret_Key_SuperSecure_2026_Key_MustBe32BytesLong!";
         var (payload, iv) = AesEncryptionHelper.EncryptObject(userInfo, jwtKey);
 
         return new EncryptedResponseDto
@@ -210,7 +210,7 @@ public class AuthService : IAuthService
 
     private string GenerarJwtToken(UserInfoDto usuario, DateTime expiration)
     {
-        var jwtKey = _configuration["Jwt:Key"] ?? "Cachy0S$PruebaB6GyS3ba4stianH0lg++n200216202204!";
+        var jwtKey = _configuration["Jwt:Key"] ?? "InventarioApp_JWT_Secret_Key_SuperSecure_2026_Key_MustBe32BytesLong!";
         var issuer = _configuration["Jwt:Issuer"] ?? "InventoryApi";
         var audience = _configuration["Jwt:Audience"] ?? "InventoryAngularClient";
 
