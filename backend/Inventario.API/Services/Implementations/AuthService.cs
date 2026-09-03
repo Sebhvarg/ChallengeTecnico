@@ -18,12 +18,18 @@ public class AuthService : IAuthService
 {
     private readonly AppDbContext _context;
     private readonly IConfiguration _configuration;
+    private readonly IAuditoriaService _auditoriaService;
     private readonly ILogger<AuthService> _logger;
 
-    public AuthService(AppDbContext context, IConfiguration configuration, ILogger<AuthService> logger)
+    public AuthService(
+        AppDbContext context,
+        IConfiguration configuration,
+        IAuditoriaService auditoriaService,
+        ILogger<AuthService> logger)
     {
         _context = context;
         _configuration = configuration;
+        _auditoriaService = auditoriaService;
         _logger = logger;
     }
 
@@ -148,6 +154,7 @@ public class AuthService : IAuthService
         var token = GenerarJwtToken(userInfo, expiration);
 
         _logger.LogInformation("Usuario {Usuario} ({Rol}) autenticado con éxito mediante spLogin.", usuario, nombreRol);
+        await _auditoriaService.RegistrarAsync("LOGIN", "Autenticación", $"Inicio de sesión exitoso del usuario {usuario} ({nombres} {apellidos}) con rol {nombreRol}.", userId, usuario, nombreRol);
 
         var rawResponse = new LoginResponseDto
         {

@@ -8,7 +8,7 @@ namespace Inventario.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Administrador")]
+[Authorize(Roles = "Administrador,Soporte")]
 [Produces("application/json")]
 public class UsuariosController : ControllerBase
 {

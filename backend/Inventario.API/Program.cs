@@ -49,6 +49,8 @@ try
     });
 
     // 3. Inyección de Dependencias (Servicios de Negocio)
+    builder.Services.AddHttpContextAccessor();
+    builder.Services.AddScoped<IAuditoriaService, AuditoriaService>();
     builder.Services.AddScoped<IAuthService, AuthService>();
     builder.Services.AddScoped<IProductoService, ProductoService>();
     builder.Services.AddScoped<IProveedorService, ProveedorService>();
@@ -56,6 +58,7 @@ try
     builder.Services.AddScoped<IInventarioService, InventarioService>();
     builder.Services.AddScoped<IReporteService, ReporteService>();
     builder.Services.AddScoped<IUsuarioService, UsuarioService>();
+    builder.Services.AddScoped<ILogService, LogService>();
 
     // 4. Configuración de Controladores y Serialización JSON
     builder.Services.AddControllers()

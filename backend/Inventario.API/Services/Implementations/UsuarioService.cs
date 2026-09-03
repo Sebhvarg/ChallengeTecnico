@@ -13,11 +13,16 @@ namespace Inventario.API.Services.Implementations;
 public class UsuarioService : IUsuarioService
 {
     private readonly AppDbContext _context;
+    private readonly IAuditoriaService _auditoriaService;
     private readonly ILogger<UsuarioService> _logger;
 
-    public UsuarioService(AppDbContext context, ILogger<UsuarioService> logger)
+    public UsuarioService(
+        AppDbContext context,
+        IAuditoriaService auditoriaService,
+        ILogger<UsuarioService> logger)
     {
         _context = context;
+        _auditoriaService = auditoriaService;
         _logger = logger;
     }
 
@@ -145,6 +150,7 @@ public class UsuarioService : IUsuarioService
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("Usuario {Usuario} creado con ID {Id}.", nuevo.NombreUsuario, nuevo.Id);
+        await _auditoriaService.RegistrarAsync("CREAR_USUARIO", "Usuarios", $"Se registró un nuevo usuario: @{nuevo.NombreUsuario} ({nuevo.Nombres} {nuevo.Apellidos}) con rol ID {nuevo.IdRol}.");
 
         return await ObtenerPorIdAsync(nuevo.Id);
     }
@@ -182,6 +188,7 @@ public class UsuarioService : IUsuarioService
 
         await _context.SaveChangesAsync();
         _logger.LogInformation("Usuario ID {Id} actualizado correctamente.", id);
+        await _auditoriaService.RegistrarAsync("EDITAR_USUARIO", "Usuarios", $"Se actualizaron los datos del usuario ID {id} (@{u.NombreUsuario} - {u.Nombres} {u.Apellidos}).");
 
         return await ObtenerPorIdAsync(id);
     }
@@ -202,6 +209,7 @@ public class UsuarioService : IUsuarioService
         u.Estado = false;
         await _context.SaveChangesAsync();
         _logger.LogInformation("Usuario ID {Id} desactivado exitosamente.", id);
+        await _auditoriaService.RegistrarAsync("DESACTIVAR_USUARIO", "Usuarios", $"Se desactivó la cuenta del usuario ID {id} (@{u.NombreUsuario}).");
 
         return true;
     }
@@ -222,6 +230,7 @@ public class UsuarioService : IUsuarioService
         u.Estado = true;
         await _context.SaveChangesAsync();
         _logger.LogInformation("Usuario ID {Id} reactivado exitosamente.", id);
+        await _auditoriaService.RegistrarAsync("REACTIVAR_USUARIO", "Usuarios", $"Se reactivó la cuenta del usuario ID {id} (@{u.NombreUsuario}).");
 
         return true;
     }

@@ -77,7 +77,7 @@ export class UsuariosComponent implements OnInit {
       { key: 'rol', header: 'Rol del Sistema', template: this.rolTpl, width: '150px', align: 'center' },
       { key: 'estado', header: 'Estado', template: this.estadoTpl, width: '120px', align: 'center' },
       { key: 'fechaCreacion', header: 'Fecha Registro', template: this.fechaTpl, width: '140px', align: 'center' },
-      ...(this.authService.isAdmin() ? [{ key: 'acciones', header: 'Acciones', align: 'center' as const, template: this.accionesTpl, width: '110px' }] : [])
+      ...(this.authService.canManageUsers() ? [{ key: 'acciones', header: 'Acciones', align: 'center' as const, template: this.accionesTpl, width: '110px' }] : [])
     ];
   }
 

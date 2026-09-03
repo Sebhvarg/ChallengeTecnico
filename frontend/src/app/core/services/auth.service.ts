@@ -24,6 +24,11 @@ export class AuthService {
   userRoutes = signal<RutaPermiso[]>([]);
   isAuthenticated = computed(() => !!this.currentUser() && !!this.getToken());
   isAdmin = computed(() => this.currentUser()?.rolNombre?.toLowerCase() === 'administrador');
+  isSoporte = computed(() => this.currentUser()?.rolNombre?.toLowerCase() === 'soporte');
+  canManageUsers = computed(() => {
+    const rol = this.currentUser()?.rolNombre?.toLowerCase();
+    return rol === 'administrador' || rol === 'soporte';
+  });
 
   private integrityIntervalId?: any;
 

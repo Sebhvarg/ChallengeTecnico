@@ -11,11 +11,16 @@ namespace Inventario.API.Services.Implementations;
 public class ProductoService : IProductoService
 {
     private readonly AppDbContext _context;
+    private readonly IAuditoriaService _auditoriaService;
     private readonly ILogger<ProductoService> _logger;
 
-    public ProductoService(AppDbContext context, ILogger<ProductoService> logger)
+    public ProductoService(
+        AppDbContext context,
+        IAuditoriaService auditoriaService,
+        ILogger<ProductoService> logger)
     {
         _context = context;
+        _auditoriaService = auditoriaService;
         _logger = logger;
     }
 
@@ -186,6 +191,7 @@ public class ProductoService : IProductoService
             await transaction.CommitAsync();
 
             _logger.LogInformation("Producto {Codigo} - {Nombre} creado exitosamente con Lote {Lote}.", codigo, nombre, lote);
+            await _auditoriaService.RegistrarAsync("CREAR_PRODUCTO", "Productos", $"Se creó el producto '{codigo} - {nombre}' con lote inicial {lote}.");
 
             return await ObtenerPorIdAsync(producto.Id);
         }
@@ -241,6 +247,7 @@ public class ProductoService : IProductoService
 
         await _context.SaveChangesAsync();
         _logger.LogInformation("Producto ID {Id} actualizado correctamente.", id);
+        await _auditoriaService.RegistrarAsync("EDITAR_PRODUCTO", "Productos", $"Se actualizaron los datos del producto ID {id} ('{producto.Nombre}').");
 
         return await ObtenerPorIdAsync(id);
     }
@@ -270,6 +277,7 @@ public class ProductoService : IProductoService
 
         await _context.SaveChangesAsync();
         _logger.LogInformation("Producto ID {Id} desactivado exitosamente.", id);
+        await _auditoriaService.RegistrarAsync("DESACTIVAR_PRODUCTO", "Productos", $"Se desactivó el producto ID {id} ('{producto.Nombre}').");
 
         return true;
     }
@@ -324,6 +332,7 @@ public class ProductoService : IProductoService
             await _context.SaveChangesAsync();
 
             await transaction.CommitAsync();
+            await _auditoriaService.RegistrarAsync("CREAR_LOTE", "Inventario", $"Se agregó el lote '{lote}' con stock {dto.StockProducto} para el producto '{producto.Nombre}'.");
 
             return new LoteProductoDto
             {

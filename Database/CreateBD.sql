@@ -89,22 +89,38 @@ CREATE TABLE Inventario(
     CONSTRAINT FKLote FOREIGN KEY (idLote) REFERENCES ProveedorXProducto(id),
 );
 
+CREATE TABLE Auditoria (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    idUsuario INT NULL,
+    usuario VARCHAR(80) NOT NULL,
+    rol VARCHAR(30) NOT NULL,
+    accion VARCHAR(50) NOT NULL,
+    modulo VARCHAR(50) NOT NULL,
+    detalle VARCHAR(500) NOT NULL,
+    ip VARCHAR(45) NULL,
+    fecha DATETIME NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT FKAuditoriaUsuario FOREIGN KEY (idUsuario) REFERENCES Usuario(id)
+);
+
 GO
 
 -- Índices de consulta rápida
 CREATE INDEX IXProductoCodigo ON Producto(codigo);
 CREATE INDEX IXInventarioPxP ON Inventario(idLote);
+CREATE INDEX IXAuditoriaFecha ON Auditoria(fecha DESC);
+CREATE INDEX IXAuditoriaUsuario ON Auditoria(usuario);
 GO
 
 -- INSERTS 
 
 -- =======================================================
--- 1. ROLES (Solo Administrador y Operador)
+-- 1. ROLES (Administrador, Operador, Soporte)
 -- =======================================================
 INSERT INTO Roles (rol, estado)
 VALUES 
 ('Administrador', 1), -- id: 1
-('Operador', 1);      -- id: 2
+('Operador', 1),      -- id: 2
+('Soporte', 1);       -- id: 3
 GO
 
 -- =======================================================
@@ -114,7 +130,8 @@ GO
 INSERT INTO Usuario (nombres, apellidos, usuario, email, contrasenaHash, rol)
 VALUES 
 ('Carlos', 'Mendoza', 'admin', 'admin@prueba.com', '$2a$11$ie6g.6Y8JxEu3w9undaGr.npgr0icjEO23SMrUVqrw6l7exjulxHi', 1),
-('Laura', 'Paredes', 'operador1', 'operador@prueba.com', '$2a$11$ie6g.6Y8JxEu3w9undaGr.npgr0icjEO23SMrUVqrw6l7exjulxHi', 2);
+('Laura', 'Paredes', 'operador1', 'operador@prueba.com', '$2a$11$ie6g.6Y8JxEu3w9undaGr.npgr0icjEO23SMrUVqrw6l7exjulxHi', 2),
+('Andrés', 'Torres', 'soporte', 'soporte@prueba.com', '$2a$11$ie6g.6Y8JxEu3w9undaGr.npgr0icjEO23SMrUVqrw6l7exjulxHi', 3);
 GO
 
 -- =======================================================
@@ -128,13 +145,19 @@ VALUES
 (1, 'Gestión de Proveedores', '/proveedores', 1),
 (1, 'Gestión de Inventario', '/inventario', 1),
 (1, 'Gestión de Usuarios', '/usuarios', 1),
+(1, 'Visor de Logs', '/logs', 1),
 (1, 'Reporte de Precios', '/reportes/precios', 1),
 
 -- Rutas Operador / Proveedor (Consulta de productos, stock y reporte de precios)
 (2, 'Dashboard', '/dashboard', 1),
 (2, 'Consulta de Productos', '/productos', 1),
 (2, 'Control de Stock', '/inventario', 1),
-(2, 'Reporte de Precios', '/reportes/precios', 1);
+(2, 'Reporte de Precios', '/reportes/precios', 1),
+
+-- Rutas Soporte (Administración de usuarios y Visor de logs del sistema)
+(3, 'Dashboard', '/dashboard', 1),
+(3, 'Gestión de Usuarios', '/usuarios', 1),
+(3, 'Visor de Logs', '/logs', 1);
 GO
 
 -- =======================================================
@@ -208,4 +231,18 @@ VALUES
 (7, 280.00, 400.00, 20),
 (8, 450.00, 600.00, 6),
 (9, 230.00, 350.00, 18);
+GO
+
+-- =======================================================
+-- 9. AUDITORÍA INICIAL (Trazabilidad de acciones de usuarios)
+-- =======================================================
+INSERT INTO Auditoria (idUsuario, usuario, rol, accion, modulo, detalle, ip, fecha)
+VALUES 
+(1, 'admin', 'Administrador', 'LOGIN', 'Autenticación', 'Inicio de sesión exitoso del administrador Carlos Mendoza.', '127.0.0.1', DATEADD(MINUTE, -120, GETDATE())),
+(1, 'admin', 'Administrador', 'CREAR_PRODUCTO', 'Productos', 'Registro inicial de producto M50 - Monitor 50 pulgadas 4K con lote LOT-0001-01.', '127.0.0.1', DATEADD(MINUTE, -115, GETDATE())),
+(1, 'admin', 'Administrador', 'CREAR_PROVEEDOR', 'Proveedores', 'Alta de nuevo proveedor "Proveedor A" (contacto@proveedora.com).', '127.0.0.1', DATEADD(MINUTE, -110, GETDATE())),
+(2, 'operador1', 'Operador', 'LOGIN', 'Autenticación', 'Inicio de sesión del operador Laura Paredes.', '127.0.0.1', DATEADD(MINUTE, -90, GETDATE())),
+(2, 'operador1', 'Operador', 'ACTUALIZAR_STOCK', 'Inventario', 'Ajuste de inventario en lote LOT-0001-01 (+15 unidades).', '127.0.0.1', DATEADD(MINUTE, -85, GETDATE())),
+(3, 'soporte', 'Soporte', 'LOGIN', 'Autenticación', 'Inicio de sesión del usuario de soporte Andrés Torres.', '127.0.0.1', DATEADD(MINUTE, -30, GETDATE())),
+(3, 'soporte', 'Soporte', 'CONSULTA_LOGS', 'Auditoría', 'Consulta y verificación de trazas de eventos del servidor.', '127.0.0.1', DATEADD(MINUTE, -25, GETDATE()));
 GO

@@ -5,10 +5,10 @@
     <div>
       <h1 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight">Gestión de Usuarios</h1>
       <p class="text-xs sm:text-sm text-pink-100 mt-1">
-        Administración de cuentas, asignación de roles (Administrador / Operador) y control de acceso.
+        Administración de cuentas, asignación de roles (Administrador / Operador / Soporte) y control de acceso.
       </p>
     </div>
-    <div *ngIf="authService.isAdmin()">
+    <div *ngIf="authService.canManageUsers()">
       <button 
         (click)="abrirModalCrear()"
         class="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-secondary hover:bg-brand-secondary-hover text-slate-900 text-sm font-bold rounded-xl shadow-md transition-all">
@@ -79,7 +79,11 @@
 
   <ng-template #rolTpl let-item>
     <span 
-      [ngClass]="item.idRol === 1 ? 'bg-brand-primary-light text-brand-primary border-brand-primary-muted/40' : 'bg-brand-secondary-light text-brand-secondary-dark border-brand-secondary-muted/50'"
+      [ngClass]="{
+        'bg-brand-primary-light text-brand-primary border-brand-primary-muted/40': item.idRol === 1,
+        'bg-brand-secondary-light text-brand-secondary-dark border-brand-secondary-muted/50': item.idRol === 2,
+        'bg-purple-50 text-purple-700 border-purple-200': item.idRol === 3
+      }"
       class="text-xs font-bold px-2.5 py-1 rounded-full border inline-block">
       {{ item.rol }}
     </span>

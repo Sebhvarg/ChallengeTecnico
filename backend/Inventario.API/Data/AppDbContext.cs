@@ -17,6 +17,7 @@ public class AppDbContext : DbContext
     public DbSet<Producto> Productos => Set<Producto>();
     public DbSet<ProveedorXProducto> ProveedorXProductos => Set<ProveedorXProducto>();
     public DbSet<Entities.Inventario> Inventarios => Set<Entities.Inventario>();
+    public DbSet<Auditoria> Auditorias => Set<Auditoria>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -158,6 +159,27 @@ public class AppDbContext : DbContext
             entity.Property(e => e.StockProducto).HasColumnName("stockProducto").HasDefaultValue(1);
             entity.Property(e => e.FechaCreacion).HasColumnName("fechaCreacion").HasDefaultValueSql("GETDATE()");
             entity.Property(e => e.FechaActualizacion).HasColumnName("fechaActualizacion").HasDefaultValueSql("GETDATE()");
+        });
+
+        // Auditoria
+        modelBuilder.Entity<Auditoria>(entity =>
+        {
+            entity.ToTable("Auditoria");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.IdUsuario).HasColumnName("idUsuario");
+            entity.Property(e => e.Usuario).HasColumnName("usuario").HasMaxLength(80).IsRequired();
+            entity.Property(e => e.Rol).HasColumnName("rol").HasMaxLength(30).IsRequired();
+            entity.Property(e => e.Accion).HasColumnName("accion").HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Modulo).HasColumnName("modulo").HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Detalle).HasColumnName("detalle").HasMaxLength(500).IsRequired();
+            entity.Property(e => e.Ip).HasColumnName("ip").HasMaxLength(45);
+            entity.Property(e => e.Fecha).HasColumnName("fecha").HasDefaultValueSql("GETDATE()");
+
+            entity.HasOne(e => e.UsuarioRef)
+                  .WithMany()
+                  .HasForeignKey(e => e.IdUsuario)
+                  .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

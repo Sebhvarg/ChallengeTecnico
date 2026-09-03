@@ -1,0 +1,538 @@
+<div class="space-y-6">
+  
+  <!-- Encabezado de la Vista con Selector de Pestañas -->
+  <div class="bg-brand-primary p-6 rounded-2xl shadow-md text-white">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div>
+        <h1 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight">Logs y Auditoría de Acciones</h1>
+        <p class="text-xs sm:text-sm text-pink-100 mt-1">
+          Registro pormenorizado de usuarios responsables, operaciones realizadas en el sistema y monitoreo del servidor.
+        </p>
+      </div>
+
+      <!-- Selector de Pestaña -->
+      <div class="inline-flex p-1 bg-black/25 rounded-xl border border-white/20">
+        <button 
+          (click)="cambiarTab('auditoria')"
+          [ngClass]="tabActiva() === 'auditoria' ? 'bg-white text-slate-900 shadow-xs' : 'text-white hover:text-white/80'"
+          class="px-4 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+          </svg>
+          <span>Auditoría de Usuarios</span>
+        </button>
+
+        <button 
+          (click)="cambiarTab('servidor')"
+          [ngClass]="tabActiva() === 'servidor' ? 'bg-white text-slate-900 shadow-xs' : 'text-white hover:text-white/80'"
+          class="px-4 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+          <span>Logs del Servidor</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================== -->
+  <!-- PESTAÑA 1: AUDITORÍA DE USUARIOS (¿Quién hizo cada cosa?)                 -->
+  <!-- ======================================================================== -->
+  <ng-container *ngIf="tabActiva() === 'auditoria'">
+    
+    <!-- Tarjetas de Métricas de Auditoría -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      
+      <!-- Total Acciones -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Operaciones</p>
+            <h3 class="text-2xl font-black text-slate-800 mt-1">{{ statsAuditoria().total }}</h3>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inicios de Sesión -->
+      <div class="bg-white p-4 rounded-2xl border border-emerald-200 shadow-xs bg-gradient-to-br from-white to-emerald-50/30">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-emerald-700">Inicios de Sesión</p>
+            <h3 class="text-2xl font-black text-emerald-800 mt-1">{{ statsAuditoria().iniciosSesion }}</h3>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Creaciones -->
+      <div class="bg-white p-4 rounded-2xl border border-blue-200 shadow-xs bg-gradient-to-br from-white to-blue-50/30">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-blue-700">Creaciones / Altas</p>
+            <h3 class="text-2xl font-black text-blue-800 mt-1">{{ statsAuditoria().creaciones }}</h3>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modificaciones -->
+      <div class="bg-white p-4 rounded-2xl border border-amber-200 shadow-xs bg-gradient-to-br from-white to-amber-50/30">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-amber-700">Ediciones / Cambios</p>
+            <h3 class="text-2xl font-black text-amber-800 mt-1">{{ statsAuditoria().ediciones }}</h3>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Barra de Filtros de Auditoría -->
+    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row gap-3 items-center justify-between">
+      
+      <!-- Selectores de Módulo y Acción -->
+      <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+        <select 
+          [(ngModel)]="moduloAuditoria"
+          (change)="buscarAuditoria()"
+          class="px-3 py-1.5 text-xs font-bold border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-primary/20 bg-slate-50 text-slate-700">
+          <option value="TODOS">Todos los Módulos</option>
+          <option value="Autenticación">Autenticación</option>
+          <option value="Productos">Productos</option>
+          <option value="Inventario">Inventario / Lotes</option>
+          <option value="Proveedores">Proveedores</option>
+          <option value="Usuarios">Usuarios</option>
+          <option value="Auditoría">Auditoría</option>
+        </select>
+
+        <select 
+          [(ngModel)]="accionAuditoria"
+          (change)="buscarAuditoria()"
+          class="px-3 py-1.5 text-xs font-bold border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-primary/20 bg-slate-50 text-slate-700">
+          <option value="TODOS">Todas las Acciones</option>
+          <option value="LOGIN">LOGIN</option>
+          <option value="CREAR_PRODUCTO">CREAR PRODUCTO</option>
+          <option value="EDITAR_PRODUCTO">EDITAR PRODUCTO</option>
+          <option value="DESACTIVAR_PRODUCTO">DESACTIVAR PRODUCTO</option>
+          <option value="CREAR_LOTE">CREAR LOTE</option>
+          <option value="CREAR_PROVEEDOR">CREAR PROVEEDOR</option>
+          <option value="EDITAR_PROVEEDOR">EDITAR PROVEEDOR</option>
+          <option value="DESACTIVAR_PROVEEDOR">DESACTIVAR PROVEEDOR</option>
+          <option value="REACTIVAR_PROVEEDOR">REACTIVAR PROVEEDOR</option>
+          <option value="CREAR_USUARIO">CREAR USUARIO</option>
+          <option value="EDITAR_USUARIO">EDITAR USUARIO</option>
+          <option value="DESACTIVAR_USUARIO">DESACTIVAR USUARIO</option>
+          <option value="REACTIVAR_USUARIO">REACTIVAR USUARIO</option>
+        </select>
+      </div>
+
+      <!-- Buscador de texto -->
+      <div class="flex items-center gap-2 w-full md:w-auto">
+        <div class="relative flex-1 md:w-72">
+          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+          </span>
+          <input 
+            type="text" 
+            [(ngModel)]="filtroAuditoria" 
+            (keyup.enter)="buscarAuditoria()"
+            placeholder="Buscar usuario o detalle..."
+            class="w-full pl-10 pr-4 py-1.5 text-xs sm:text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary text-slate-700 placeholder-slate-400" />
+        </div>
+
+        <button 
+          (click)="buscarAuditoria()"
+          class="px-3.5 py-1.5 bg-brand-primary hover:bg-brand-primary-hover text-white text-xs font-bold rounded-xl shadow-xs transition-colors">
+          Buscar
+        </button>
+        <button 
+          *ngIf="filtroAuditoria || moduloAuditoria !== 'TODOS' || accionAuditoria !== 'TODOS'"
+          (click)="limpiarFiltroAuditoria()"
+          class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-xl transition-colors">
+          Limpiar
+        </button>
+        <button 
+          (click)="descargarTxt()"
+          title="Descargar registros de auditoría visibles a .txt"
+          class="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5 shrink-0">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          </svg>
+          <span>Exportar .TXT</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Tabla Genérica de Auditoría -->
+    <app-table
+      [columns]="columnasAuditoria"
+      [data]="auditorias()"
+      [loading]="cargandoAuditoria()"
+      [zebra]="true"
+      [showPagination]="true"
+      [currentPage]="paginaAuditoria"
+      [totalPages]="totalPaginasAuditoria()"
+      [totalRecords]="totalRegistrosAuditoria()"
+      (pageChange)="cambiarPaginaAuditoria($event)"
+      emptyMessage="No se encontraron registros de auditoría para los filtros seleccionados.">
+    </app-table>
+
+  </ng-container>
+
+  <!-- ======================================================================== -->
+  <!-- PESTAÑA 2: LOGS TÉCNICOS DEL SERVIDOR                                    -->
+  <!-- ======================================================================== -->
+  <ng-container *ngIf="tabActiva() === 'servidor'">
+    
+    <!-- Tarjetas de Estadísticas de Logs de Servidor -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      
+      <!-- Total -->
+      <div 
+        (click)="filtrarPorNivel('TODOS')"
+        [class.ring-2]="nivelServidor === 'TODOS'"
+        class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs cursor-pointer hover:shadow-md transition-all ring-brand-primary">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Eventos</p>
+            <h3 class="text-2xl font-black text-slate-800 mt-1">{{ statsServidor().total }}</h3>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Errores -->
+      <div 
+        (click)="filtrarPorNivel('ERR')"
+        [class.ring-2]="nivelServidor === 'ERR'"
+        class="bg-white p-4 rounded-2xl border border-rose-200 shadow-xs cursor-pointer hover:shadow-md transition-all ring-rose-500 bg-gradient-to-br from-white to-rose-50/30">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-rose-600">Errores Críticos</p>
+            <h3 class="text-2xl font-black text-rose-700 mt-1">{{ statsServidor().errores }}</h3>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Advertencias -->
+      <div 
+        (click)="filtrarPorNivel('WRN')"
+        [class.ring-2]="nivelServidor === 'WRN'"
+        class="bg-white p-4 rounded-2xl border border-amber-200 shadow-xs cursor-pointer hover:shadow-md transition-all ring-amber-500 bg-gradient-to-br from-white to-amber-50/30">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-amber-600">Advertencias</p>
+            <h3 class="text-2xl font-black text-amber-700 mt-1">{{ statsServidor().advertencias }}</h3>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Información -->
+      <div 
+        (click)="filtrarPorNivel('INF')"
+        [class.ring-2]="nivelServidor === 'INF'"
+        class="bg-white p-4 rounded-2xl border border-sky-200 shadow-xs cursor-pointer hover:shadow-md transition-all ring-sky-500 bg-gradient-to-br from-white to-sky-50/30">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-sky-600">Información</p>
+            <h3 class="text-2xl font-black text-sky-700 mt-1">{{ statsServidor().informacion }}</h3>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Barra de Filtros de Servidor -->
+    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row gap-3 items-center justify-between">
+      
+      <!-- Filtros por nivel en botones -->
+      <div class="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
+        <button 
+          (click)="filtrarPorNivel('TODOS')"
+          [ngClass]="nivelServidor === 'TODOS' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+          class="px-3 py-1.5 rounded-xl text-xs font-bold transition-colors">
+          Todos
+        </button>
+        <button 
+          (click)="filtrarPorNivel('ERR')"
+          [ngClass]="nivelServidor === 'ERR' ? 'bg-rose-600 text-white' : 'bg-rose-50 text-rose-700 hover:bg-rose-100'"
+          class="px-3 py-1.5 rounded-xl text-xs font-bold transition-colors">
+          Errores
+        </button>
+        <button 
+          (click)="filtrarPorNivel('WRN')"
+          [ngClass]="nivelServidor === 'WRN' ? 'bg-amber-500 text-white' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'"
+          class="px-3 py-1.5 rounded-xl text-xs font-bold transition-colors">
+          Advertencias
+        </button>
+        <button 
+          (click)="filtrarPorNivel('INF')"
+          [ngClass]="nivelServidor === 'INF' ? 'bg-sky-600 text-white' : 'bg-sky-50 text-sky-700 hover:bg-sky-100'"
+          class="px-3 py-1.5 rounded-xl text-xs font-bold transition-colors">
+          Información
+        </button>
+      </div>
+
+      <!-- Buscador de texto y acciones -->
+      <div class="flex items-center gap-2 w-full md:w-auto">
+        <div class="relative flex-1 md:w-72">
+          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+          </span>
+          <input 
+            type="text" 
+            [(ngModel)]="filtroServidor" 
+            (keyup.enter)="buscarServidor()"
+            placeholder="Buscar en el mensaje o traza..."
+            class="w-full pl-10 pr-4 py-1.5 text-xs sm:text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary text-slate-700 placeholder-slate-400" />
+        </div>
+
+        <button 
+          (click)="buscarServidor()"
+          class="px-3.5 py-1.5 bg-brand-primary hover:bg-brand-primary-hover text-white text-xs font-bold rounded-xl shadow-xs transition-colors">
+          Buscar
+        </button>
+        
+        <button 
+          (click)="descargarTxt()"
+          title="Descargar logs visibles a .txt"
+          class="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5 shrink-0">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          </svg>
+          <span>Exportar .TXT</span>
+        </button>
+
+        <button 
+          (click)="limpiarLogsServidor()"
+          title="Vaciar archivos de log"
+          class="px-3 py-1.5 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 text-xs font-bold rounded-xl transition-colors">
+          Limpiar
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Tabla Genérica de Servidor -->
+    <app-table
+      [columns]="columnasServidor"
+      [data]="logsServidor()"
+      [loading]="cargandoServidor()"
+      [zebra]="true"
+      [showPagination]="true"
+      [currentPage]="paginaServidor"
+      [totalPages]="totalPaginasServidor()"
+      [totalRecords]="totalRegistrosServidor()"
+      (pageChange)="cambiarPaginaServidor($event)"
+      emptyMessage="No se encontraron registros de logs para los filtros aplicados.">
+    </app-table>
+
+  </ng-container>
+
+  <!-- ======================================================================== -->
+  <!-- TEMPLATES PERSONALIZADOS PARA CELDAS DE AUDITORÍA                         -->
+  <!-- ======================================================================== -->
+  
+  <ng-template #idAuditTpl let-item>
+    <span class="font-mono text-xs font-bold text-slate-400">#{{ item.id }}</span>
+  </ng-template>
+
+  <ng-template #fechaAuditTpl let-item>
+    <span class="font-mono text-xs text-slate-600 font-medium">
+      {{ item.fecha | date:'dd/MM/yyyy HH:mm:ss' }}
+    </span>
+  </ng-template>
+
+  <ng-template #usuarioAuditTpl let-item>
+    <div class="flex items-center gap-2.5">
+      <div class="w-7 h-7 rounded-lg bg-brand-primary text-white font-bold text-xs flex items-center justify-center shrink-0 uppercase shadow-xs">
+        {{ item.usuario ? item.usuario.charAt(0) : 'U' }}
+      </div>
+      <div>
+        <p class="font-bold text-slate-800 text-xs font-mono">&#64;{{ item.usuario }}</p>
+        <span 
+          [ngClass]="{
+            'text-brand-primary font-bold': item.rol === 'Administrador',
+            'text-purple-700 font-bold': item.rol === 'Soporte',
+            'text-amber-700 font-bold': item.rol === 'Operador'
+          }"
+          class="text-[10px] uppercase tracking-wider block">
+          {{ item.rol }}
+        </span>
+      </div>
+    </div>
+  </ng-template>
+
+  <ng-template #moduloAuditTpl let-item>
+    <span 
+      [ngClass]="{
+        'bg-sky-50 text-sky-700 border-sky-200': item.modulo === 'Productos',
+        'bg-indigo-50 text-indigo-700 border-indigo-200': item.modulo === 'Inventario',
+        'bg-purple-50 text-purple-700 border-purple-200': item.modulo === 'Proveedores',
+        'bg-emerald-50 text-emerald-700 border-emerald-200': item.modulo === 'Usuarios',
+        'bg-rose-50 text-rose-700 border-rose-200': item.modulo === 'Autenticación'
+      }"
+      class="text-xs font-bold px-2.5 py-1 rounded-full border inline-block">
+      {{ item.modulo }}
+    </span>
+  </ng-template>
+
+  <ng-template #accionAuditTpl let-item>
+    <span 
+      [ngClass]="{
+        'bg-emerald-100 text-emerald-800 border-emerald-300': item.accion.startsWith('CREAR') || item.accion === 'LOGIN',
+        'bg-blue-100 text-blue-800 border-blue-300': item.accion.startsWith('EDITAR') || item.accion.startsWith('ACTUALIZAR'),
+        'bg-rose-100 text-rose-800 border-rose-300': item.accion.startsWith('DESACTIVAR') || item.accion.startsWith('ELIMINAR'),
+        'bg-teal-100 text-teal-800 border-teal-300': item.accion.startsWith('REACTIVAR')
+      }"
+      class="text-[11px] font-black px-2 py-0.5 rounded-md border font-mono inline-block">
+      {{ item.accion }}
+    </span>
+  </ng-template>
+
+  <ng-template #detalleAuditTpl let-item>
+    <p class="text-xs text-slate-700 font-medium leading-relaxed">{{ item.detalle }}</p>
+  </ng-template>
+
+  <ng-template #ipAuditTpl let-item>
+    <span class="font-mono text-[11px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+      {{ item.ip || 'Local' }}
+    </span>
+  </ng-template>
+
+  <!-- ======================================================================== -->
+  <!-- TEMPLATES PERSONALIZADOS PARA CELDAS DE SERVIDOR                         -->
+  <!-- ======================================================================== -->
+  
+  <ng-template #idLogTpl let-item>
+    <span class="font-mono text-xs font-bold text-slate-400">#{{ item.id }}</span>
+  </ng-template>
+
+  <ng-template #fechaLogTpl let-item>
+    <span class="font-mono text-xs text-slate-600 font-medium">
+      {{ item.fecha | date:'dd/MM/yyyy HH:mm:ss' }}
+    </span>
+  </ng-template>
+
+  <ng-template #nivelLogTpl let-item>
+    <span 
+      [ngClass]="{
+        'bg-rose-100 text-rose-800 border-rose-300': item.nivel === 'ERR' || item.nivel === 'FTL',
+        'bg-amber-100 text-amber-800 border-amber-300': item.nivel === 'WRN',
+        'bg-sky-100 text-sky-800 border-sky-300': item.nivel === 'INF',
+        'bg-slate-100 text-slate-800 border-slate-300': item.nivel === 'DBG'
+      }"
+      class="text-xs font-black px-2.5 py-0.5 rounded-md border font-mono inline-block">
+      {{ item.nivel }}
+    </span>
+  </ng-template>
+
+  <ng-template #mensajeLogTpl let-item>
+    <div class="py-1">
+      <p class="text-xs font-semibold text-slate-800 break-words font-mono">{{ item.mensaje }}</p>
+      <span *ngIf="item.excepcion" class="text-[10px] text-rose-600 font-bold uppercase tracking-wider bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200 mt-1 inline-block">
+        Contiene Excepción / Stack Trace
+      </span>
+    </div>
+  </ng-template>
+
+  <ng-template #accionesLogTpl let-item>
+    <button 
+      (click)="verDetalleLog(item)"
+      title="Ver detalles del evento"
+      class="px-2.5 py-1 text-xs font-bold text-brand-primary bg-brand-primary-light hover:bg-brand-primary hover:text-white rounded-lg border border-brand-primary-muted/30 transition-all">
+      Detalle
+    </button>
+  </ng-template>
+
+  <!-- Modal: Detalle del Log de Servidor -->
+  <app-modal
+    [isOpen]="mostrarModalDetalle()"
+    (close)="mostrarModalDetalle.set(false)"
+    title="Detalle del Evento de Servidor"
+    size="lg">
+    
+    <div *ngIf="logSeleccionado" class="space-y-4">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+        <div>
+          <span class="text-slate-500 font-medium">ID de Registro:</span>
+          <p class="font-bold text-slate-800 font-mono">#{{ logSeleccionado.id }}</p>
+        </div>
+        <div>
+          <span class="text-slate-500 font-medium">Fecha y Hora:</span>
+          <p class="font-bold text-slate-800 font-mono">{{ logSeleccionado.fecha | date:'dd/MM/yyyy HH:mm:ss.SSS' }}</p>
+        </div>
+        <div>
+          <span class="text-slate-500 font-medium">Severidad / Nivel:</span>
+          <p class="font-black font-mono text-slate-900">{{ logSeleccionado.nivel }}</p>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1">Mensaje del Evento:</label>
+        <div class="p-3 bg-slate-900 text-slate-100 rounded-xl font-mono text-xs leading-relaxed break-words overflow-x-auto">
+          {{ logSeleccionado.mensaje }}
+        </div>
+      </div>
+
+      <div *ngIf="logSeleccionado.excepcion">
+        <label class="block text-xs font-bold text-rose-700 mb-1">Traza de la Excepción (Stack Trace):</label>
+        <div class="p-3 bg-rose-950 text-rose-100 rounded-xl font-mono text-xs leading-relaxed whitespace-pre-wrap overflow-x-auto max-h-60 border border-rose-900">
+          {{ logSeleccionado.excepcion }}
+        </div>
+      </div>
+    </div>
+
+    <div slot="footer" class="flex items-center justify-end w-full">
+      <button 
+        type="button"
+        (click)="mostrarModalDetalle.set(false)"
+        class="px-5 py-2 text-sm font-bold bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition-colors">
+        Cerrar
+      </button>
+    </div>
+  </app-modal>
+
+</div>

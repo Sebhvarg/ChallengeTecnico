@@ -1061,3 +1061,73 @@ BEGIN
     END CATCH
 END;
 GO
+
+-- ============================================================================
+-- PROCEDIMIENTOS ALMACENADOS DE AUDITORÍA Y TRAZABILIDAD DE USUARIOS
+-- ============================================================================
+
+-- Registrar acción de auditoría
+CREATE OR ALTER PROCEDURE spRegistrarAuditoria
+    @idUsuario INT = NULL,
+    @usuario VARCHAR(80),
+    @rol VARCHAR(30),
+    @accion VARCHAR(50),
+    @modulo VARCHAR(50),
+    @detalle VARCHAR(500),
+    @ip VARCHAR(45) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO Auditoria (idUsuario, usuario, rol, accion, modulo, detalle, ip, fecha)
+    VALUES (
+        @idUsuario,
+        ISNULL(@usuario, 'Anónimo'),
+        ISNULL(@rol, 'Sin Rol'),
+        @accion,
+        @modulo,
+        @detalle,
+        @ip,
+        GETDATE()
+    );
+END;
+GO
+
+-- Consulta y Búsqueda Paginada de Auditoría
+CREATE OR ALTER PROCEDURE spBuscarAuditoria
+    @filtro VARCHAR(100) = '',
+    @modulo VARCHAR(50) = '',
+    @accion VARCHAR(50) = '',
+    @pagina INT = 1,
+    @tamanoPagina INT = 10
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF @pagina < 1 SET @pagina = 1;
+    IF @tamanoPagina < 1 SET @tamanoPagina = 10;
+    IF @tamanoPagina > 100 SET @tamanoPagina = 100;
+
+    SELECT 
+        a.id,
+        a.idUsuario,
+        a.usuario,
+        a.rol,
+        a.accion,
+        a.modulo,
+        a.detalle,
+        a.ip,
+        a.fecha,
+        COUNT(*) OVER() AS totalregistros
+    FROM Auditoria a WITH (NOLOCK)
+    WHERE (@filtro IS NULL OR @filtro = '' 
+           OR a.usuario LIKE '%' + @filtro + '%'
+           OR a.detalle LIKE '%' + @filtro + '%'
+           OR a.rol LIKE '%' + @filtro + '%')
+      AND (@modulo IS NULL OR @modulo = '' OR @modulo = 'TODOS' OR a.modulo = @modulo)
+      AND (@accion IS NULL OR @accion = '' OR @accion = 'TODOS' OR a.accion = @accion)
+    ORDER BY a.id DESC
+    OFFSET (@pagina - 1) * @tamanoPagina ROWS
+    FETCH NEXT @tamanoPagina ROWS ONLY;
+END;
+GO

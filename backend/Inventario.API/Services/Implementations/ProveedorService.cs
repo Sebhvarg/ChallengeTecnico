@@ -11,11 +11,16 @@ namespace Inventario.API.Services.Implementations;
 public class ProveedorService : IProveedorService
 {
     private readonly AppDbContext _context;
+    private readonly IAuditoriaService _auditoriaService;
     private readonly ILogger<ProveedorService> _logger;
 
-    public ProveedorService(AppDbContext context, ILogger<ProveedorService> logger)
+    public ProveedorService(
+        AppDbContext context,
+        IAuditoriaService auditoriaService,
+        ILogger<ProveedorService> logger)
     {
         _context = context;
+        _auditoriaService = auditoriaService;
         _logger = logger;
     }
 
@@ -122,6 +127,7 @@ public class ProveedorService : IProveedorService
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("Proveedor {Nombre} creado con ID {Id}.", proveedor.Nombre, proveedor.Id);
+        await _auditoriaService.RegistrarAsync("CREAR_PROVEEDOR", "Proveedores", $"Se registró el proveedor '{proveedor.Nombre}' ({proveedor.Email}).");
 
         return await ObtenerPorIdAsync(proveedor.Id);
     }
@@ -185,6 +191,7 @@ public class ProveedorService : IProveedorService
 
         await _context.SaveChangesAsync();
         _logger.LogInformation("Proveedor ID {Id} actualizado correctamente.", id);
+        await _auditoriaService.RegistrarAsync("EDITAR_PROVEEDOR", "Proveedores", $"Se actualizaron los datos del proveedor ID {id} ('{proveedor.Nombre}').");
 
         return await ObtenerPorIdAsync(id);
     }
@@ -214,6 +221,7 @@ public class ProveedorService : IProveedorService
 
         await _context.SaveChangesAsync();
         _logger.LogInformation("Proveedor ID {Id} desactivado exitosamente junto con sus lotes asociados.", id);
+        await _auditoriaService.RegistrarAsync("DESACTIVAR_PROVEEDOR", "Proveedores", $"Se desactivó el proveedor ID {id} ('{proveedor.Nombre}') y sus lotes vinculados.");
 
         return true;
     }
@@ -249,6 +257,7 @@ public class ProveedorService : IProveedorService
 
         await _context.SaveChangesAsync();
         _logger.LogInformation("Proveedor ID {Id} reactivado exitosamente junto con sus lotes y productos asociados.", id);
+        await _auditoriaService.RegistrarAsync("REACTIVAR_PROVEEDOR", "Proveedores", $"Se reactivó el proveedor ID {id} ('{proveedor.Nombre}'), sus lotes y productos asociados.");
 
         return true;
     }
