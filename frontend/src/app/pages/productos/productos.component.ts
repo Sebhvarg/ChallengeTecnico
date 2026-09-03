@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, ViewChild, TemplateRef, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
@@ -9,11 +9,13 @@ import { NotificationService } from '../../core/services/notification.service';
 import { ProductoListItem, CrearProductoDto, ActualizarProductoDto, CrearLoteDto } from '../../core/models/producto.models';
 import { Proveedor } from '../../core/models/proveedor.models';
 import { Categoria } from '../../core/models/categoria.models';
+import { ModalComponent } from '../../shared/components/modal/modal.component';
+import { TableComponent, TableColumn } from '../../shared/components/table';
 
 @Component({
   selector: 'app-productos',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ModalComponent, TableComponent],
   templateUrl: './productos.component.html'
 })
 export class ProductosComponent implements OnInit {
@@ -22,6 +24,16 @@ export class ProductosComponent implements OnInit {
   private proveedorService = inject(ProveedorService);
   private categoriaService = inject(CategoriaService);
   private notify = inject(NotificationService);
+
+  @ViewChild('codigoTpl', { static: true }) codigoTpl!: TemplateRef<any>;
+  @ViewChild('categoriaTpl', { static: true }) categoriaTpl!: TemplateRef<any>;
+  @ViewChild('proveedorLoteTpl', { static: true }) proveedorLoteTpl!: TemplateRef<any>;
+  @ViewChild('costoTpl', { static: true }) costoTpl!: TemplateRef<any>;
+  @ViewChild('precioTpl', { static: true }) precioTpl!: TemplateRef<any>;
+  @ViewChild('stockTpl', { static: true }) stockTpl!: TemplateRef<any>;
+  @ViewChild('accionesTpl', { static: true }) accionesTpl!: TemplateRef<any>;
+
+  columnas: TableColumn<ProductoListItem>[] = [];
 
   // Estados de datos
   productos = signal<ProductoListItem[]>([]);
@@ -63,8 +75,22 @@ export class ProductosComponent implements OnInit {
   };
 
   ngOnInit(): void {
+    this.configurarColumnas();
     this.cargarCatalogos();
     this.cargarProductos();
+  }
+
+  configurarColumnas(): void {
+    this.columnas = [
+      { key: 'codigo', header: 'Código', template: this.codigoTpl, width: '90px' },
+      { key: 'producto', header: 'Producto', cellClass: 'font-semibold text-slate-900' },
+      { key: 'categoria', header: 'Categoría', template: this.categoriaTpl, width: '130px' },
+      { key: 'proveedor', header: 'Proveedor / Lote', template: this.proveedorLoteTpl },
+      { key: 'costoProducto', header: 'Costo', align: 'right', template: this.costoTpl, width: '100px' },
+      { key: 'precioProducto', header: 'P. Venta', align: 'right', template: this.precioTpl, width: '100px' },
+      { key: 'stockProducto', header: 'Stock', align: 'center', template: this.stockTpl, width: '110px' },
+      ...(this.authService.isAdmin() ? [{ key: 'acciones', header: 'Acciones', align: 'center' as const, template: this.accionesTpl, width: '130px' }] : [])
+    ];
   }
 
   cargarCatalogos(): void {

@@ -32,133 +32,226 @@
     </div>
   </div>
 
-  <!-- Tabla Inventario -->
-  <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-    <div class="overflow-x-auto">
-      <table class="w-full text-left text-sm">
-        <thead class="bg-slate-50 text-slate-600 border-b border-slate-200/80 text-xs uppercase font-bold">
-          <tr>
-            <th class="py-3.5 px-4">Lote</th>
-            <th class="py-3.5 px-4">Código / Producto</th>
-            <th class="py-3.5 px-4">Proveedor</th>
-            <th class="py-3.5 px-4 text-right">Costo Unit.</th>
-            <th class="py-3.5 px-4 text-right">P. Venta</th>
-            <th class="py-3.5 px-4 text-center">Stock Actual</th>
-            <th class="py-3.5 px-4">Última Actualización</th>
-            <th class="py-3.5 px-4 text-center">Acción</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100">
-          <tr *ngFor="let item of inventario()" class="hover:bg-slate-50/80 transition-colors">
-            <td class="py-3.5 px-4 font-mono font-bold text-brand-primary">
-              {{ item.numeroLote }}
-            </td>
-            <td class="py-3.5 px-4 font-semibold text-slate-900">
-              <span class="font-mono text-xs text-slate-500 mr-1">[{{ item.codigoProducto }}]</span>
-              {{ item.productoNombre }}
-            </td>
-            <td class="py-3.5 px-4">
-              <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-brand-primary-light text-brand-primary border border-brand-primary-muted/30">
-                {{ item.proveedorNombre }}
-              </span>
-            </td>
-            <td class="py-3.5 px-4 text-right text-slate-600 font-mono">
-              ${{ item.costoProducto | number:'1.2-2' }}
-            </td>
-            <td class="py-3.5 px-4 text-right font-black text-slate-900 font-mono">
-              ${{ item.precioProducto | number:'1.2-2' }}
-            </td>
-            <td class="py-3.5 px-4 text-center">
-              <span 
-                [ngClass]="item.stockProducto > 10 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-brand-secondary-light text-brand-secondary-dark border-brand-secondary-muted'"
-                class="text-xs font-bold px-3 py-1 rounded-full border">
-                {{ item.stockProducto }} unids
-              </span>
-            </td>
-            <td class="py-3.5 px-4 text-xs text-slate-400 font-medium">
-              {{ item.fechaActualizacion | date:'dd/MM/yyyy HH:mm' }}
-            </td>
-            <td class="py-3.5 px-4 text-center">
-              <button 
-                (click)="abrirModalAjuste(item)"
-                class="px-3 py-1.5 bg-brand-primary-light hover:bg-brand-primary text-brand-primary hover:text-white rounded-lg text-xs font-bold border border-brand-primary-muted/30 transition-all">
-                Ajustar Stock
-              </button>
-            </td>
-          </tr>
-          <tr *ngIf="inventario().length === 0 && !cargando()">
-            <td colspan="8" class="py-8 text-center text-slate-400 text-sm">
-              No hay registros de inventario disponibles.
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+  <!-- Tabla Genérica de Inventario -->
+  <app-table
+    [columns]="columnas"
+    [data]="inventario()"
+    [loading]="cargando()"
+    [zebra]="true"
+    [showPagination]="true"
+    [currentPage]="paginaActual"
+    [totalPages]="totalPaginas()"
+    [totalRecords]="totalRegistros()"
+    (pageChange)="cambiarPagina($event)"
+    emptyMessage="No hay registros de inventario disponibles.">
+  </app-table>
 
-    <!-- Paginación -->
-    <div class="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-      <div>Total Lotes: <strong class="text-slate-800">{{ totalRegistros() }}</strong> | Página {{ paginaActual }} de {{ totalPaginas() }}</div>
-      <div class="flex gap-2">
-        <button (click)="cambiarPagina(paginaActual - 1)" [disabled]="paginaActual <= 1" class="px-3 py-1.5 rounded-lg border border-slate-300 disabled:opacity-40 font-medium">Anterior</button>
-        <button (click)="cambiarPagina(paginaActual + 1)" [disabled]="paginaActual >= totalPaginas()" class="px-3 py-1.5 rounded-lg border border-slate-300 disabled:opacity-40 font-medium">Siguiente</button>
-      </div>
-    </div>
-  </div>
+  <!-- Templates Personalizados para Celdas de Inventario -->
+  <ng-template #loteTpl let-item>
+    <span class="font-mono font-bold text-brand-primary">{{ item.numeroLote }}</span>
+  </ng-template>
 
-  <!-- Modal Ajuste de Stock -->
-  <div *ngIf="mostrarModalAjuste()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-app-black/60 backdrop-blur-xs">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-app-border">
-      <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+  <ng-template #productoTpl let-item>
+    <div class="font-semibold text-slate-900">
+      <span class="font-mono text-xs text-slate-500 mr-1">[{{ item.codigoProducto }}]</span>
+      {{ item.productoNombre }}
+    </div>
+  </ng-template>
+
+  <ng-template #proveedorTpl let-item>
+    <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-brand-primary-light text-brand-primary border border-brand-primary-muted/30">
+      {{ item.proveedorNombre }}
+    </span>
+  </ng-template>
+
+  <ng-template #costoTpl let-item>
+    <span class="text-slate-600 font-mono">${{ item.costoProducto | number:'1.2-2' }}</span>
+  </ng-template>
+
+  <ng-template #precioTpl let-item>
+    <span class="font-black text-slate-900 font-mono">${{ item.precioProducto | number:'1.2-2' }}</span>
+  </ng-template>
+
+  <ng-template #stockTpl let-item>
+    <span 
+      [ngClass]="item.stockProducto > 10 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-brand-secondary-light text-brand-secondary-dark border-brand-secondary-muted'"
+      class="text-xs font-bold px-3 py-1 rounded-full border inline-block">
+      {{ item.stockProducto }} unids
+    </span>
+  </ng-template>
+
+  <ng-template #fechaTpl let-item>
+    <span class="text-xs text-slate-500 font-medium">
+      {{ item.fechaActualizacion | date:'dd/MM/yyyy HH:mm' }}
+    </span>
+  </ng-template>
+
+  <ng-template #accionTpl let-item>
+    <button 
+      (click)="abrirModalAjuste(item)"
+      class="px-3 py-1.5 bg-brand-primary-light hover:bg-brand-primary text-brand-primary hover:text-white rounded-lg text-xs font-bold border border-brand-primary-muted/30 transition-all">
+      Ajustar Stock
+    </button>
+  </ng-template>
+
+  <!-- Modal Genérico: Ajuste de Stock -->
+  <app-modal
+    [isOpen]="mostrarModalAjuste()"
+    (close)="mostrarModalAjuste.set(false)"
+    title="Ajuste de Stock"
+    [subtitle]="itemSeleccionado ? itemSeleccionado.productoNombre + ' (' + itemSeleccionado.numeroLote + ')' : ''"
+    size="md">
+
+    <form (ngSubmit)="guardarAjuste()" class="space-y-4 text-sm">
+      <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs flex justify-between items-center">
         <div>
-          <h3 class="text-lg font-bold text-slate-800">Ajuste de Stock</h3>
-          <p class="text-xs text-brand-primary font-bold">{{ itemSeleccionado?.productoNombre }} ({{ itemSeleccionado?.numeroLote }})</p>
+          <span class="text-slate-500">Proveedor:</span>
+          <p class="font-bold text-slate-800 text-sm mt-0.5">{{ itemSeleccionado?.proveedorNombre }}</p>
         </div>
-        <button (click)="mostrarModalAjuste.set(false)" class="text-slate-400 hover:text-slate-700">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-        </button>
+        <div class="text-right">
+          <span class="text-slate-500">Stock Actual Registrado:</span>
+          <p class="font-black text-brand-primary text-sm mt-0.5">{{ itemSeleccionado?.stockProducto }} unids</p>
+        </div>
       </div>
 
-      <form (ngSubmit)="guardarAjuste()" class="space-y-4 text-sm">
-        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs flex justify-between">
-          <span>Proveedor: <strong>{{ itemSeleccionado?.proveedorNombre }}</strong></span>
-          <span>Stock Actual: <strong class="text-brand-primary font-bold">{{ itemSeleccionado?.stockProducto }} unids</strong></span>
-        </div>
+      <!-- Control de Stock Actual con Botones de Incremento y Decremento -->
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1.5">Nuevo Stock / Existencias *</label>
+        <div class="flex items-center gap-2">
+          <!-- Botón Decremento (-1) -->
+          <button 
+            type="button" 
+            (click)="decrementarStock()"
+            [disabled]="formAjuste.cantidad <= 0"
+            title="Disminuir 1 unidad"
+            class="w-12 h-12 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-600 border border-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all font-black text-xl shadow-xs select-none">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4"/>
+            </svg>
+          </button>
 
-        <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">Tipo de Ajuste *</label>
-          <select [(ngModel)]="formAjuste.tipoAjuste" name="tipoAjuste" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-primary">
-            <option value="Incrementar">Incrementar Existencias (Entrada de Almacén)</option>
-            <option value="Decrementar">Decrementar Existencias (Salida / Merma)</option>
-            <option value="Fijar">Fijar Existencia Exacta (Conteo Físico)</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">Cantidad *</label>
-          <input type="number" [(ngModel)]="formAjuste.cantidad" name="cantidad" min="1" required class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-primary"/>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">Actualizar Costo ($)</label>
-            <input type="number" [(ngModel)]="formAjuste.nuevoCosto" name="nuevoCosto" step="0.01" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-primary"/>
+          <!-- Input con el Stock Actual / Modificado -->
+          <div class="relative flex-1">
+            <input 
+              type="number" 
+              [(ngModel)]="formAjuste.cantidad" 
+              name="cantidad" 
+              min="0" 
+              required 
+              class="w-full text-center font-black text-2xl py-2 px-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-primary text-slate-900 bg-white shadow-inner"/>
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 pointer-events-none">unids</span>
           </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">Actualizar Precio ($)</label>
-            <input type="number" [(ngModel)]="formAjuste.nuevoPrecio" name="nuevoPrecio" step="0.01" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-primary"/>
-          </div>
-        </div>
 
-        <div class="flex justify-end gap-3 pt-3 border-t border-slate-100">
-          <button type="button" (click)="mostrarModalAjuste.set(false)" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 font-medium">Cancelar</button>
-          <button type="submit" [disabled]="guardando()" class="px-5 py-2 rounded-xl bg-brand-primary hover:bg-brand-primary-hover text-white font-bold disabled:opacity-50 shadow-md">
-            {{ guardando() ? 'Aplicando...' : 'Aplicar Ajuste' }}
+          <!-- Botón Incremento (+1) -->
+          <button 
+            type="button" 
+            (click)="incrementarStock()"
+            title="Aumentar 1 unidad"
+            class="w-12 h-12 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-600 border border-slate-300 transition-all font-black text-xl shadow-xs select-none">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+            </svg>
           </button>
         </div>
-      </form>
-    </div>
-  </div>
+
+        <!-- Indicador de Variación de Stock -->
+        <div class="mt-2 text-xs flex items-center justify-between px-1">
+          <span class="text-slate-400">Variación:</span>
+          <span *ngIf="itemSeleccionado && formAjuste.cantidad > itemSeleccionado.stockProducto" class="font-bold text-emerald-600">
+            +{{ formAjuste.cantidad - itemSeleccionado.stockProducto }} unidades (Entrada)
+          </span>
+          <span *ngIf="itemSeleccionado && formAjuste.cantidad < itemSeleccionado.stockProducto" class="font-bold text-rose-600">
+            -{{ itemSeleccionado.stockProducto - formAjuste.cantidad }} unidades (Salida)
+          </span>
+          <span *ngIf="itemSeleccionado && formAjuste.cantidad === itemSeleccionado.stockProducto" class="text-slate-400 font-medium">
+            Sin variación de existencias
+          </span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+        <!-- Actualizar Costo -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">Actualizar Costo ($)</label>
+          <div class="flex items-center gap-1.5">
+            <button 
+              type="button" 
+              (click)="decrementarCosto(1)"
+              [disabled]="(formAjuste.nuevoCosto ?? 0) <= 0"
+              title="Disminuir $1"
+              class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 disabled:opacity-30 transition-all font-black select-none shrink-0 shadow-xs">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4"/>
+              </svg>
+            </button>
+            <div class="relative flex-1">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">$</span>
+              <input 
+                type="number" 
+                [(ngModel)]="formAjuste.nuevoCosto" 
+                name="nuevoCosto" 
+                step="0.01" 
+                min="0"
+                placeholder="0.00"
+                class="w-full pl-7 pr-2 py-2 text-center font-bold text-base rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-primary text-slate-900 bg-white"/>
+            </div>
+            <button 
+              type="button" 
+              (click)="incrementarCosto(1)"
+              title="Aumentar $1"
+              class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition-all font-black select-none shrink-0 shadow-xs">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Actualizar Precio -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">Actualizar Precio ($)</label>
+          <div class="flex items-center gap-1.5">
+            <button 
+              type="button" 
+              (click)="decrementarPrecio(1)"
+              [disabled]="(formAjuste.nuevoPrecio ?? 0) <= 0"
+              title="Disminuir $1"
+              class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 disabled:opacity-30 transition-all font-black select-none shrink-0 shadow-xs">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4"/>
+              </svg>
+            </button>
+            <div class="relative flex-1">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">$</span>
+              <input 
+                type="number" 
+                [(ngModel)]="formAjuste.nuevoPrecio" 
+                name="nuevoPrecio" 
+                step="0.01" 
+                min="0"
+                placeholder="0.00"
+                class="w-full pl-7 pr-2 py-2 text-center font-bold text-base rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-primary text-slate-900 bg-white"/>
+            </div>
+            <button 
+              type="button" 
+              (click)="incrementarPrecio(1)"
+              title="Aumentar $1"
+              class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition-all font-black select-none shrink-0 shadow-xs">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+        <button type="button" (click)="mostrarModalAjuste.set(false)" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 font-medium">Cancelar</button>
+        <button type="submit" [disabled]="guardando()" class="px-5 py-2 rounded-xl bg-brand-primary hover:bg-brand-primary-hover text-white font-bold disabled:opacity-50 shadow-md">
+          {{ guardando() ? 'Guardando...' : 'Guardar Ajuste' }}
+        </button>
+      </div>
+    </form>
+  </app-modal>
 
 </div>

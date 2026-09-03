@@ -1,20 +1,23 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, ViewChild, TemplateRef, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ReporteService } from '../../core/services/reporte.service';
 import { ReportePrecioProducto } from '../../core/models/reporte.models';
+import { TableComponent, TableColumn } from '../../shared/components/table';
 
 @Component({
   selector: 'app-reportes-precios',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TableComponent],
   templateUrl: './reportes-precios.component.html'
 })
 export class ReportesPreciosComponent implements OnInit {
   private reporteService = inject(ReporteService);
 
+  @ViewChild('precioTpl', { static: true }) precioTpl!: TemplateRef<any>;
+
+  columnas: TableColumn<ReportePrecioProducto>[] = [];
   reporte = signal<ReportePrecioProducto[]>([]);
-  proveedores = signal<string[]>([]);
   cargando = signal(false);
   filtro = '';
 
@@ -29,12 +32,23 @@ export class ReportesPreciosComponent implements OnInit {
         if (res.exito && res.datos) {
           this.reporte.set(res.datos);
 
-          // Extraer las columnas de proveedores dinámicamente
+          // Extraer nombres únicos de los proveedores
           const provSet = new Set<string>();
           res.datos.forEach(item => {
-            Object.keys(item.preciosPorProveedor).forEach(prov => provSet.add(prov));
+            Object.keys(item.preciosPorProveedor || {}).forEach(prov => provSet.add(prov));
           });
-          this.proveedores.set(Array.from(provSet).sort());
+          const listaProveedores = Array.from(provSet).sort();
+
+          // Configurar columnas dinámicas estandarizadas para app-table
+          this.columnas = [
+            { key: 'producto', header: 'Producto', cellClass: 'font-bold text-slate-900' },
+            ...listaProveedores.map(prov => ({
+              key: `preciosPorProveedor.${prov}`,
+              header: `Precio ${prov}`,
+              align: 'right' as const,
+              template: this.precioTpl
+            }))
+          ];
         }
         this.cargando.set(false);
       },
@@ -44,9 +58,5 @@ export class ReportesPreciosComponent implements OnInit {
 
   buscar(): void {
     this.cargarReporte();
-  }
-
-  getPrecio(item: ReportePrecioProducto, prov: string): number {
-    return item.preciosPorProveedor[prov] || 0;
   }
 }

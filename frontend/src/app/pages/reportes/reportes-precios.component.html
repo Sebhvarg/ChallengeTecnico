@@ -32,42 +32,26 @@
     </div>
   </div>
 
-  <!-- Tabla de Matriz Comparativa (Pivot) -->
-  <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-    <div class="overflow-x-auto">
-      <table class="w-full text-left text-sm">
-        <thead class="bg-brand-primary text-white text-xs uppercase font-extrabold tracking-wider">
-          <tr>
-            <th class="py-4 px-6 sticky left-0 bg-brand-primary z-10 border-r border-brand-primary-hover">Producto</th>
-            <th *ngFor="let prov of proveedores()" class="py-4 px-6 text-right">
-              Precio {{ prov }}
-            </th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100">
-          <tr *ngFor="let item of reporte()" class="hover:bg-brand-primary-light/40 transition-colors">
-            <td class="py-4 px-6 font-bold text-slate-900 sticky left-0 bg-white shadow-xs border-r border-slate-100">
-              {{ item.producto }}
-            </td>
-            <td *ngFor="let prov of proveedores()" class="py-4 px-6 text-right font-mono">
-              <ng-container *ngIf="getPrecio(item, prov) > 0; else noData">
-                <span class="font-black text-slate-900 bg-brand-secondary-light px-3 py-1.5 rounded-lg border border-brand-secondary-muted/60 text-sm">
-                  ${{ getPrecio(item, prov) | number:'1.2-2' }}
-                </span>
-              </ng-container>
-              <ng-template #noData>
-                <span class="text-xs text-slate-400 italic">No disponible</span>
-              </ng-template>
-            </td>
-          </tr>
-          <tr *ngIf="reporte().length === 0 && !cargando()">
-            <td [attr.colspan]="proveedores().length + 1" class="py-8 text-center text-slate-400 text-sm">
-              No hay productos ni proveedores para mostrar en la matriz.
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
+  <!-- Tabla Genérica de Matriz Comparativa con Patrón Zebra -->
+  <app-table
+    [columns]="columnas"
+    [data]="reporte()"
+    [loading]="cargando()"
+    [zebra]="true"
+    [showPagination]="false"
+    emptyMessage="No hay productos ni proveedores para mostrar en la matriz.">
+  </app-table>
+
+  <!-- Template para Celdas de Precios por Proveedor -->
+  <ng-template #precioTpl let-item let-value="value">
+    <ng-container *ngIf="value > 0; else noData">
+      <span class="font-mono font-bold text-slate-900 bg-brand-primary-light text-brand-primary px-3 py-1 rounded-lg border border-brand-primary-muted/30 text-sm inline-block">
+        ${{ value | number:'1.2-2' }}
+      </span>
+    </ng-container>
+    <ng-template #noData>
+      <span class="text-xs text-slate-400 italic">No disponible</span>
+    </ng-template>
+  </ng-template>
 
 </div>

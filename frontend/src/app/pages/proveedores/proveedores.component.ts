@@ -1,15 +1,17 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, ViewChild, TemplateRef, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { ProveedorService } from '../../core/services/proveedor.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { Proveedor, CrearProveedorDto, ActualizarProveedorDto } from '../../core/models/proveedor.models';
+import { ModalComponent } from '../../shared/components/modal/modal.component';
+import { TableComponent, TableColumn } from '../../shared/components/table';
 
 @Component({
   selector: 'app-proveedores',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ModalComponent, TableComponent],
   templateUrl: './proveedores.component.html'
 })
 export class ProveedoresComponent implements OnInit {
@@ -17,6 +19,11 @@ export class ProveedoresComponent implements OnInit {
   private proveedorService = inject(ProveedorService);
   private notify = inject(NotificationService);
 
+  @ViewChild('idTpl', { static: true }) idTpl!: TemplateRef<any>;
+  @ViewChild('estadoTpl', { static: true }) estadoTpl!: TemplateRef<any>;
+  @ViewChild('accionesTpl', { static: true }) accionesTpl!: TemplateRef<any>;
+
+  columnas: TableColumn<Proveedor>[] = [];
   proveedores = signal<Proveedor[]>([]);
   cargando = signal(false);
   filtro = '';
@@ -33,7 +40,19 @@ export class ProveedoresComponent implements OnInit {
   formEditar: ActualizarProveedorDto & { id: number } = { id: 0, nombre: '', email: '', celular: '', estado: true };
 
   ngOnInit(): void {
+    this.configurarColumnas();
     this.cargarProveedores();
+  }
+
+  configurarColumnas(): void {
+    this.columnas = [
+      { key: 'id', header: 'ID', template: this.idTpl, width: '90px' },
+      { key: 'nombre', header: 'Nombre de la Empresa', cellClass: 'font-bold text-slate-900' },
+      { key: 'email', header: 'Correo Electrónico', cellClass: 'text-slate-600' },
+      { key: 'celular', header: 'Celular / Teléfono', cellClass: 'text-slate-600' },
+      { key: 'estado', header: 'Estado', align: 'center', template: this.estadoTpl, width: '130px' },
+      ...(this.authService.isAdmin() ? [{ key: 'acciones', header: 'Acciones', align: 'center' as const, template: this.accionesTpl, width: '110px' }] : [])
+    ];
   }
 
   cargarProveedores(): void {
