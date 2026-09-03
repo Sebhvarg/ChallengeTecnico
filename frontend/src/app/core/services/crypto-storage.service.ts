@@ -20,7 +20,7 @@ interface EncryptedEnvelope {
 })
 export class CryptoStorageService {
   // Clave compartida con el Backend (.NET) para descifrado de red y sesión
-  private readonly NETWORK_KEY_SECRET = 'InventarioApp_JWT_Secret_Key_SuperSecure_2026_Key_MustBe32BytesLong!';
+  private readonly NETWORK_KEY_SECRET = 'Cachy0SPruebaB6GyS3ba4stianH0lg++in200216202204!';
   
   // Claves de bóveda para el sessionStorage local
   private readonly SECRET_KEY = 'InventarioApp_SessionStorage_Key_2026_SecureVault!';

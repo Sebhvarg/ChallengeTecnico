@@ -82,7 +82,7 @@ try
     });
 
     // 6. Configuración de Autenticación con JWT
-    var jwtKey = builder.Configuration["Jwt:Key"] ?? "InventarioApp_JWT_Secret_Key_SuperSecure_2026_Key_MustBe32BytesLong!";
+    var jwtKey = builder.Configuration["Jwt:Key"] ?? "Cachy0SPruebaB6GyS3ba4stianH0lg++in200216202204!";
     var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "InventoryApi";
     var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "InventoryAngularClient";
 
