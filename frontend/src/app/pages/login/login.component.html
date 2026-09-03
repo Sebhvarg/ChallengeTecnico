@@ -1,120 +1,140 @@
-<div class="min-h-screen bg-app-dark flex items-center justify-center p-4">
-  <div class="max-w-md w-full">
+<div class="min-h-screen flex flex-col lg:flex-row bg-white">
+  
+  <!-- Lado Izquierdo: Imagen Ilustrativa (50% en pantallas grandes) -->
+  <div class="relative hidden lg:flex lg:w-1/2 bg-slate-900 overflow-hidden items-end justify-start p-8 xl:p-12">
+    <img 
+      src="/assets/img/loginimg.webp" 
+      alt="Sistema de Inventario" 
+      class="absolute inset-0 w-full h-full object-cover object-center" />
     
-    <!-- Tarjeta Principal de Login -->
-    <div class="bg-app-white rounded-2xl shadow-xl overflow-hidden border border-app-border">
+    <!-- Gradiente de fondo para contraste y elegancia -->
+    <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/20"></div>
+    
+    <!-- Logo blanco sobrepuesto en la parte inferior izquierda -->
+    <div class="relative z-20">
+      <img 
+        src="/assets/img/logo/logoblanco.svg" 
+        alt="Logo Blanco" 
+        class="h-16 xl:h-20 w-auto object-contain drop-shadow-2xl" />
+    </div>
+  </div>
+
+  <!-- Lado Derecho: Formulario con Fondo Blanco (50% en pantallas grandes) -->
+  <div class="w-full lg:w-1/2 min-h-screen flex flex-col justify-between bg-white px-6 py-10 sm:px-12 lg:px-16 xl:px-20 overflow-y-auto">
+    
+    <!-- Contenedor Central del Formulario -->
+    <div class="max-w-md w-full mx-auto my-auto py-6">
       
-      <!-- Header con Color Sólido de Marca -->
-      <div class="bg-brand-primary p-8 text-white text-center">
-        <div class="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center mx-auto mb-3 border border-white/20">
-          <svg class="w-6 h-6 text-brand-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-          </svg>
+      <!-- Encabezado del Formulario Centrado -->
+      <div class="mb-8 text-center">
+        <div class="mb-5 flex justify-center">
+          <img 
+            src="/assets/img/logo/logoinventario.svg" 
+            alt="Logo Sistema de Inventario" 
+            class="h-14 sm:h-16 w-auto object-contain mx-auto" />
         </div>
-        <h2 class="text-xl font-bold tracking-tight text-white">Sistema de Inventario</h2>
-        <p class="text-brand-secondary text-xs font-medium mt-1">Ingresa tus credenciales para acceder</p>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Iniciar Sesión</h2>
       </div>
 
-      <!-- Formulario -->
-      <div class="p-8">
+      <!-- Alerta de Error -->
+      <div *ngIf="errorMensaje()" class="mb-6 p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs flex items-center gap-3">
+        <svg class="w-5 h-5 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        <span class="font-medium">{{ errorMensaje() }}</span>
+      </div>
+
+      <!-- Formulario de Login -->
+      <form (ngSubmit)="onSubmit()" class="space-y-5">
         
-        <!-- Alerta de Error -->
-        <div *ngIf="errorMensaje()" class="mb-5 p-3.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs flex items-center gap-2">
-          <svg class="w-4 h-4 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        <!-- Campo Usuario / Email -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+            Usuario o Correo Electrónico
+          </label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+              </svg>
+            </span>
+            <input 
+              type="text" 
+              [(ngModel)]="usuario" 
+              name="usuario" 
+              placeholder="Ingresa tu usuario o correo electrónico"
+              required
+              class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent text-sm bg-slate-50 hover:bg-white focus:bg-white transition-all text-slate-800 placeholder-slate-400 shadow-sm"/>
+          </div>
+        </div>
+
+        <!-- Campo Contraseña -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+            Contraseña
+          </label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+              </svg>
+            </span>
+            <input 
+              [type]="mostrarContrasena() ? 'text' : 'password'" 
+              [(ngModel)]="contrasena" 
+              name="contrasena" 
+              placeholder="••••••••"
+              required
+              class="w-full pl-10 pr-16 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent text-sm bg-slate-50 hover:bg-white focus:bg-white transition-all text-slate-800 placeholder-slate-400 shadow-sm"/>
+            <button 
+              type="button" 
+              (click)="toggleMostrarContrasena()"
+              class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-xs text-brand-primary font-bold hover:text-brand-primary-hover transition-colors">
+              {{ mostrarContrasena() ? 'Ocultar' : 'Ver' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Botón de Envío -->
+        <button 
+          type="submit" 
+          [disabled]="cargando()"
+          class="w-full py-3.5 px-4 bg-brand-primary hover:bg-brand-primary-hover active:bg-brand-primary-active text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm mt-3">
+          <svg *ngIf="cargando()" class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          <span>{{ errorMensaje() }}</span>
-        </div>
+          <span>{{ cargando() ? 'Iniciando sesión...' : 'Iniciar Sesión' }}</span>
+        </button>
+      </form>
 
-        <form (ngSubmit)="onSubmit()" class="space-y-5">
-          
-          <!-- Campo Usuario / Email -->
-          <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-              Usuario o Correo Electrónico
-            </label>
-            <div class="relative">
-              <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                </svg>
-              </span>
-              <input 
-                type="text" 
-                [(ngModel)]="usuario" 
-                name="usuario" 
-                placeholder="admin u operador1"
-                required
-                class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent text-sm bg-slate-50/50 hover:bg-white transition-all"/>
-            </div>
-          </div>
-
-          <!-- Campo Contraseña -->
-          <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-              Contraseña
-            </label>
-            <div class="relative">
-              <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                </svg>
-              </span>
-              <input 
-                [type]="mostrarContrasena() ? 'text' : 'password'" 
-                [(ngModel)]="contrasena" 
-                name="contrasena" 
-                placeholder="••••••••"
-                required
-                class="w-full pl-10 pr-14 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent text-sm bg-slate-50/50 hover:bg-white transition-all"/>
-              <button 
-                type="button" 
-                (click)="toggleMostrarContrasena()"
-                class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-xs text-brand-primary font-semibold hover:text-brand-primary-dark">
-                {{ mostrarContrasena() ? 'Ocultar' : 'Ver' }}
-              </button>
-            </div>
-          </div>
-
-          <!-- Botón de Envío -->
+      <!-- Accesos rápidos para prueba -->
+      <div class="mt-8 pt-6 border-t border-slate-100 text-center">
+        <p class="text-xs text-slate-500 font-semibold mb-3">Usuarios de prueba:</p>
+        <div class="flex gap-2 justify-center">
           <button 
-            type="submit" 
-            [disabled]="cargando()"
-            class="w-full py-3 px-4 bg-brand-primary hover:bg-brand-primary-hover text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm">
-            <svg *ngIf="cargando()" class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span>{{ cargando() ? 'Iniciando sesión...' : 'Iniciar Sesión' }}</span>
+            type="button" 
+            (click)="fillCredentials('admin')" 
+            class="px-4 py-2 rounded-xl text-xs font-bold bg-brand-primary-light text-brand-primary border border-brand-primary-muted/40 hover:bg-brand-primary hover:text-white transition-all shadow-sm">
+            Admin
           </button>
-        </form>
-
-        <!-- Accesos rápidos para prueba -->
-        <div class="mt-8 pt-6 border-t border-slate-100 text-center">
-          <p class="text-xs text-slate-500 font-semibold mb-3">Usuarios de prueba (Contraseña: Admin123*):</p>
-          <div class="flex gap-2 justify-center">
-            <button 
-              type="button" 
-              (click)="fillCredentials('admin')" 
-              class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-brand-primary-light text-brand-primary border border-brand-primary-muted/40 hover:bg-brand-primary hover:text-white transition-all">
-              Admin
-            </button>
-            <button 
-              type="button" 
-              (click)="fillCredentials('operador1')" 
-              class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-brand-secondary-light text-brand-secondary-dark border border-brand-secondary-muted hover:bg-brand-secondary hover:text-slate-900 transition-all">
-              Operador
-            </button>
-          </div>
+          <button 
+            type="button" 
+            (click)="fillCredentials('operador1')" 
+            class="px-4 py-2 rounded-xl text-xs font-bold bg-brand-primary-light text-brand-primary border border-brand-primary-muted/40 hover:bg-brand-primary hover:text-white transition-all shadow-sm">
+            Operador
+          </button>
         </div>
-
       </div>
+
     </div>
 
     <!-- Footer Copyright -->
-    <p class="text-center text-xs text-slate-400 mt-6">
-      Challenge Full Stack .NET Core & Angular • © 2026
-    </p>
+    <div class="pt-6 text-center">
+      <p class="text-xs text-slate-400">
+      Challenge Full Stack Developer - Desarrollado por <a href="https://github.com/Sebhvarg" target="_blank" class="text-brand-primary hover:text-brand-primary-hover font-semibold transition-colors">Sebastian Holguin</a>
+      </p>
+    </div>
 
   </div>
 </div>
