@@ -10,11 +10,16 @@ namespace Inventario.API.Services.Implementations;
 public class CategoriaService : ICategoriaService
 {
     private readonly AppDbContext _context;
+    private readonly IAuditoriaService _auditoriaService;
     private readonly ILogger<CategoriaService> _logger;
 
-    public CategoriaService(AppDbContext context, ILogger<CategoriaService> logger)
+    public CategoriaService(
+        AppDbContext context,
+        IAuditoriaService auditoriaService,
+        ILogger<CategoriaService> logger)
     {
         _context = context;
+        _auditoriaService = auditoriaService;
         _logger = logger;
     }
 
@@ -52,6 +57,7 @@ public class CategoriaService : ICategoriaService
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("Categoría {Categoria} creada con ID {Id}.", categoria.Categoria, categoria.Id);
+        await _auditoriaService.RegistrarAsync("CREAR_CATEGORIA", "Productos", $"Se creó la nueva categoría de producto '{categoria.Categoria}'.");
 
         return new CategoriaDto
         {

@@ -5,7 +5,14 @@ namespace Inventario.API.Services.Interfaces;
 
 public interface IProductoService
 {
-    Task<PagedResult<ProductoListItemDto>> BuscarProductosAsync(string? filtro, int pagina, int tamanoPagina);
+    Task<PagedResult<ProductoListItemDto>> BuscarProductosAsync(
+        string? filtro,
+        int? idCategoria,
+        decimal? precioMin,
+        decimal? precioMax,
+        int? idProveedor,
+        int pagina,
+        int tamanoPagina);
     Task<ProductoDto> ObtenerPorIdAsync(int id);
     Task<ProductoDto> ObtenerPorCodigoAsync(string codigo);
     Task<ProductoDto> CrearProductoAsync(CrearProductoDto dto);

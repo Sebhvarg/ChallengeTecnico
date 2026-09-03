@@ -11,11 +11,12 @@ import { Proveedor } from '../../core/models/proveedor.models';
 import { Categoria } from '../../core/models/categoria.models';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { TableComponent, TableColumn } from '../../shared/components/table';
+import { FiltersComponent, FilterField, FilterState } from '../../shared/components/filters';
 
 @Component({
   selector: 'app-productos',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalComponent, TableComponent],
+  imports: [CommonModule, FormsModule, ModalComponent, TableComponent, FiltersComponent],
   templateUrl: './productos.component.html'
 })
 export class ProductosComponent implements OnInit {
@@ -42,7 +43,15 @@ export class ProductosComponent implements OnInit {
   cargando = signal(false);
 
   // Filtros y paginación
-  filtro = '';
+  filterState: FilterState = {
+    search: '',
+    idCategoria: 0,
+    idProveedor: 0,
+    precioMin: null,
+    precioMax: null
+  };
+  filterFields = signal<FilterField[]>([]);
+
   paginaActual = 1;
   tamanoPagina = 8;
   totalRegistros = signal(0);
@@ -53,6 +62,13 @@ export class ProductosComponent implements OnInit {
   mostrarModalEditar = signal(false);
   mostrarModalLote = signal(false);
   guardando = signal(false);
+
+  // Nueva Categoría inline
+  mostrarNuevaCategoria = signal(false);
+  nuevaCategoriaNombre = '';
+  guardandoCategoria = signal(false);
+  errorNuevaCategoria = signal<string | null>(null);
+  private readonly REGEX_CATEGORIA = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.,\-_#/()]{2,50}$/;
 
   // Formularios
   formCrear: CrearProductoDto = this.getInitFormCrear();
@@ -101,6 +117,7 @@ export class ProductosComponent implements OnInit {
           if (res.datos.length > 0) {
             this.formCrear.idProveedor = res.datos[0].id;
           }
+          this.actualizarCamposFiltro();
         }
       }
     });
@@ -109,14 +126,54 @@ export class ProductosComponent implements OnInit {
       next: (res) => {
         if (res.exito && res.datos) {
           this.categorias.set(res.datos);
+          this.actualizarCamposFiltro();
         }
       }
     });
   }
 
+  actualizarCamposFiltro(): void {
+    this.filterFields.set([
+      {
+        key: 'idCategoria',
+        label: 'Categoría',
+        type: 'select',
+        options: [
+          { label: 'Todas las Categorías', value: 0 },
+          ...this.categorias().map(c => ({ label: c.categoria, value: c.id }))
+        ]
+      },
+      {
+        key: 'idProveedor',
+        label: 'Proveedor',
+        type: 'select',
+        options: [
+          { label: 'Todos los Proveedores', value: 0 },
+          ...this.proveedores().map(p => ({ label: p.nombre, value: p.id }))
+        ]
+      },
+      {
+        key: 'precio',
+        label: 'Rango de Precio Venta',
+        type: 'number-range',
+        unit: '$',
+        minPlaceholder: 'Min $',
+        maxPlaceholder: 'Max $'
+      }
+    ]);
+  }
+
   cargarProductos(): void {
     this.cargando.set(true);
-    this.productoService.getProductos(this.filtro, this.paginaActual, this.tamanoPagina).subscribe({
+    this.productoService.getProductos(
+      this.filterState.search,
+      this.filterState['idCategoria'],
+      this.filterState['precioMin'],
+      this.filterState['precioMax'],
+      this.filterState['idProveedor'],
+      this.paginaActual,
+      this.tamanoPagina
+    ).subscribe({
       next: (res) => {
         if (res.exito && res.datos) {
           this.productos.set(res.datos.items);
@@ -129,13 +186,20 @@ export class ProductosComponent implements OnInit {
     });
   }
 
-  buscar(): void {
+  onFiltersApply(state: FilterState): void {
+    this.filterState = state;
     this.paginaActual = 1;
     this.cargarProductos();
   }
 
-  limpiarFiltro(): void {
-    this.filtro = '';
+  onFiltersReset(): void {
+    this.filterState = {
+      search: '',
+      idCategoria: 0,
+      idProveedor: 0,
+      precioMin: null,
+      precioMax: null
+    };
     this.paginaActual = 1;
     this.cargarProductos();
   }
@@ -158,10 +222,53 @@ export class ProductosComponent implements OnInit {
   // --- Crear Producto ---
   abrirModalCrear(): void {
     this.formCrear = this.getInitFormCrear();
+    this.mostrarNuevaCategoria.set(false);
+    this.nuevaCategoriaNombre = '';
+    this.errorNuevaCategoria.set(null);
     if (this.proveedores().length > 0) {
       this.formCrear.idProveedor = this.proveedores()[0].id;
     }
     this.mostrarModalCrear.set(true);
+  }
+
+  toggleCrearCategoria(): void {
+    this.mostrarNuevaCategoria.update(v => !v);
+    this.nuevaCategoriaNombre = '';
+    this.errorNuevaCategoria.set(null);
+  }
+
+  guardarNuevaCategoria(): void {
+    const nombre = this.nuevaCategoriaNombre.trim();
+    if (!nombre || !this.REGEX_CATEGORIA.test(nombre)) {
+      this.errorNuevaCategoria.set('El nombre de la categoría debe contener entre 2 y 50 caracteres válidos.');
+      return;
+    }
+
+    this.guardandoCategoria.set(true);
+    this.errorNuevaCategoria.set(null);
+
+    this.categoriaService.crearCategoria({ categoria: nombre }).subscribe({
+      next: (res) => {
+        this.guardandoCategoria.set(false);
+        if (res.exito && res.datos) {
+          const nueva = res.datos;
+          this.categorias.update(list => [...list, nueva].sort((a, b) => a.categoria.localeCompare(b.categoria)));
+          this.formCrear.idCategoria = nueva.id;
+          if (this.mostrarModalEditar()) {
+            this.formEditar.idCategoria = nueva.id;
+          }
+          this.actualizarCamposFiltro();
+          this.mostrarNuevaCategoria.set(false);
+          this.nuevaCategoriaNombre = '';
+          this.notify.success(`Categoría '${nueva.categoria}' agregada y seleccionada exitosamente.`);
+        }
+      },
+      error: (err) => {
+        this.guardandoCategoria.set(false);
+        const msg = err.error?.mensaje || 'Error al registrar la nueva categoría.';
+        this.errorNuevaCategoria.set(msg);
+      }
+    });
   }
 
   guardarCrear(): void {

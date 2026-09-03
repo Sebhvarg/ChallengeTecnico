@@ -24,7 +24,14 @@ public class ProductoService : IProductoService
         _logger = logger;
     }
 
-    public async Task<PagedResult<ProductoListItemDto>> BuscarProductosAsync(string? filtro, int pagina, int tamanoPagina)
+    public async Task<PagedResult<ProductoListItemDto>> BuscarProductosAsync(
+        string? filtro,
+        int? idCategoria,
+        decimal? precioMin,
+        decimal? precioMax,
+        int? idProveedor,
+        int pagina,
+        int tamanoPagina)
     {
         if (pagina < 1) pagina = 1;
         if (tamanoPagina < 1) tamanoPagina = 10;
@@ -46,6 +53,26 @@ public class ProductoService : IProductoService
                                      x.p.Codigo.ToLower().Contains(cleanFilter) ||
                                      (x.pxp.NumeroLote != null && x.pxp.NumeroLote.ToLower().Contains(cleanFilter)) ||
                                      x.pr.Nombre.ToLower().Contains(cleanFilter));
+        }
+
+        if (idCategoria.HasValue && idCategoria.Value > 0)
+        {
+            query = query.Where(x => x.p.IdCategoria == idCategoria.Value);
+        }
+
+        if (idProveedor.HasValue && idProveedor.Value > 0)
+        {
+            query = query.Where(x => x.pxp.IdProveedor == idProveedor.Value);
+        }
+
+        if (precioMin.HasValue)
+        {
+            query = query.Where(x => x.inv.PrecioProducto >= precioMin.Value);
+        }
+
+        if (precioMax.HasValue)
+        {
+            query = query.Where(x => x.inv.PrecioProducto <= precioMax.Value);
         }
 
         var totalRegistros = await query.CountAsync();

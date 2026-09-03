@@ -71,6 +71,12 @@ GO
 
 CREATE OR ALTER PROCEDURE spBuscarProductos
     @producto VARCHAR(80) = '',
+    @idCategoria INT = NULL,
+    @precioMin DECIMAL(18,2) = NULL,
+    @precioMax DECIMAL(18,2) = NULL,
+    @idProveedor INT = NULL,
+    @fechaInicio DATETIME = NULL,
+    @fechaFin DATETIME = NULL,
     @pagina INT = 1,
     @tamanoPagina INT = 10
 AS
@@ -102,6 +108,12 @@ BEGIN
     INNER JOIN Proveedor pr WITH (NOLOCK) ON pxp.idProveedor = pr.id 
     INNER JOIN Inventario inv WITH (NOLOCK) ON inv.idLote = pxp.id
     WHERE (@producto IS NULL OR @producto = '' OR p.nombre LIKE '%' + @producto + '%' OR p.codigo LIKE '%' + @producto + '%')
+      AND (@idCategoria IS NULL OR p.idCategoria = @idCategoria)
+      AND (@idProveedor IS NULL OR pxp.idProveedor = @idProveedor)
+      AND (@precioMin IS NULL OR inv.precioProducto >= @precioMin)
+      AND (@precioMax IS NULL OR inv.precioProducto <= @precioMax)
+      AND (@fechaInicio IS NULL OR p.fechaCreacion >= @fechaInicio)
+      AND (@fechaFin IS NULL OR p.fechaCreacion <= @fechaFin)
     ORDER BY p.id ASC, pxp.NumeroLote ASC                        
     OFFSET (@pagina - 1) * @tamanoPagina ROWS
     FETCH NEXT @tamanoPagina ROWS ONLY;
@@ -1129,5 +1141,40 @@ BEGIN
     ORDER BY a.id DESC
     OFFSET (@pagina - 1) * @tamanoPagina ROWS
     FETCH NEXT @tamanoPagina ROWS ONLY;
+END;
+GO
+
+-- Obtener Lista de Categorías Activas
+CREATE OR ALTER PROCEDURE spObtenerCategorias
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT id, categoria, estado
+    FROM CategoriaProducto WITH (NOLOCK)
+    WHERE estado = 1
+    ORDER BY categoria ASC;
+END;
+GO
+
+-- Crear Nueva Categoría de Producto
+CREATE OR ALTER PROCEDURE spCrearCategoria
+    @categoria VARCHAR(80),
+    @nuevoId INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SET @categoria = LTRIM(RTRIM(@categoria));
+
+    IF EXISTS (SELECT 1 FROM CategoriaProducto WHERE LOWER(categoria) = LOWER(@categoria))
+    BEGIN
+        RAISERROR('La categoría especificada ya se encuentra registrada.', 16, 1);
+        RETURN;
+    END;
+
+    INSERT INTO CategoriaProducto (categoria, estado)
+    VALUES (@categoria, 1);
+
+    SET @nuevoId = SCOPE_IDENTITY();
 END;
 GO

@@ -34,7 +34,7 @@ public class CategoriasController : ControllerBase
     /// Crea una nueva categoría de productos.
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administrador,Operador")]
     [ProducesResponseType(typeof(ApiResponse<CategoriaDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create([FromBody] CrearCategoriaDto dto)

@@ -21,35 +21,14 @@
     </div>
   </div>
 
-  <!-- Barra de Filtros y Búsqueda -->
-  <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
-    <div class="relative w-full sm:w-96">
-      <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-        </svg>
-      </span>
-      <input 
-        type="text" 
-        [(ngModel)]="filtro" 
-        (keyup.enter)="buscar()"
-        placeholder="Buscar por código, nombre, lote o proveedor..."
-        class="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-primary text-sm bg-slate-50/50 hover:bg-white transition-all"/>
-    </div>
-    <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
-      <button 
-        (click)="buscar()" 
-        class="px-4 py-2 bg-slate-900 hover:bg-black text-white rounded-xl text-sm font-semibold transition-colors">
-        Buscar
-      </button>
-      <button 
-        *ngIf="filtro" 
-        (click)="limpiarFiltro()" 
-        class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition-colors">
-        Limpiar
-      </button>
-    </div>
-  </div>
+  <!-- Componente Reutilizable de Búsqueda y Filtros Avanzados -->
+  <app-filters
+    searchPlaceholder="Buscar por código, nombre, lote o proveedor..."
+    [fields]="filterFields()"
+    [state]="filterState"
+    (filtersApply)="onFiltersApply($event)"
+    (filtersReset)="onFiltersReset()">
+  </app-filters>
 
   <!-- Tabla Genérica de Productos -->
   <app-table
@@ -139,9 +118,41 @@
           <input type="text" [(ngModel)]="formCrear.codigo" name="codigo" maxlength="4" placeholder="ej: M050" required class="w-full px-3 py-2 rounded-xl border border-slate-300 uppercase focus:ring-2 focus:ring-brand-primary"/>
         </div>
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">Categoría</label>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-xs font-bold text-slate-700">Categoría</label>
+            <button 
+              type="button" 
+              (click)="toggleCrearCategoria()"
+              class="text-[11px] font-bold text-brand-primary hover:text-brand-primary-hover flex items-center gap-1 transition-colors">
+              <span>{{ mostrarNuevaCategoria() ? '✕ Cancelar' : '+ Nueva' }}</span>
+            </button>
+          </div>
+
+          <!-- Formulario Inline de Nueva Categoría -->
+          <div *ngIf="mostrarNuevaCategoria()" class="p-2.5 bg-brand-primary-light/40 border border-brand-primary-muted/40 rounded-xl space-y-1.5 mb-2">
+            <div class="flex items-center gap-2">
+              <input 
+                type="text" 
+                [(ngModel)]="nuevaCategoriaNombre" 
+                name="nuevaCategoriaNombre"
+                placeholder="Nombre categoría..." 
+                (keyup.enter)="guardarNuevaCategoria()"
+                class="w-full px-2.5 py-1 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white text-slate-800" />
+              <button 
+                type="button" 
+                (click)="guardarNuevaCategoria()"
+                [disabled]="guardandoCategoria() || !nuevaCategoriaNombre.trim()"
+                class="px-3 py-1 bg-brand-primary hover:bg-brand-primary-hover text-white text-xs font-bold rounded-lg shadow-xs transition-colors shrink-0 disabled:opacity-50">
+                {{ guardandoCategoria() ? '...' : 'Crear' }}
+              </button>
+            </div>
+            <p *ngIf="errorNuevaCategoria()" class="text-[10px] text-rose-600 font-bold">
+              {{ errorNuevaCategoria() }}
+            </p>
+          </div>
+
           <select [(ngModel)]="formCrear.idCategoria" name="idCategoria" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-primary">
-            <option [ngValue]="undefined">-- Seleccionar --</option>
+            <option [ngValue]="undefined">-- Seleccionar Categoría --</option>
             <option *ngFor="let c of categorias()" [value]="c.id">{{ c.categoria }}</option>
           </select>
         </div>
@@ -213,7 +224,39 @@
       </div>
 
       <div>
-        <label class="block text-xs font-bold text-slate-700 mb-1">Categoría</label>
+        <div class="flex items-center justify-between mb-1">
+          <label class="block text-xs font-bold text-slate-700">Categoría</label>
+          <button 
+            type="button" 
+            (click)="toggleCrearCategoria()"
+            class="text-[11px] font-bold text-brand-primary hover:text-brand-primary-hover flex items-center gap-1 transition-colors">
+            <span>{{ mostrarNuevaCategoria() ? '✕ Cancelar' : '+ Nueva' }}</span>
+          </button>
+        </div>
+
+        <!-- Formulario Inline de Nueva Categoría -->
+        <div *ngIf="mostrarNuevaCategoria()" class="p-2.5 bg-brand-primary-light/40 border border-brand-primary-muted/40 rounded-xl space-y-1.5 mb-2">
+          <div class="flex items-center gap-2">
+            <input 
+              type="text" 
+              [(ngModel)]="nuevaCategoriaNombre" 
+              name="nuevaCategoriaNombreEdit"
+              placeholder="Nombre categoría..." 
+              (keyup.enter)="guardarNuevaCategoria()"
+              class="w-full px-2.5 py-1 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white text-slate-800" />
+            <button 
+              type="button" 
+              (click)="guardarNuevaCategoria()"
+              [disabled]="guardandoCategoria() || !nuevaCategoriaNombre.trim()"
+              class="px-3 py-1 bg-brand-primary hover:bg-brand-primary-hover text-white text-xs font-bold rounded-lg shadow-xs transition-colors shrink-0 disabled:opacity-50">
+              {{ guardandoCategoria() ? '...' : 'Crear' }}
+            </button>
+          </div>
+          <p *ngIf="errorNuevaCategoria()" class="text-[10px] text-rose-600 font-bold">
+            {{ errorNuevaCategoria() }}
+          </p>
+        </div>
+
         <select [(ngModel)]="formEditar.idCategoria" name="idCategoria" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-primary">
           <option [ngValue]="undefined">-- Sin Categoría --</option>
           <option *ngFor="let c of categorias()" [value]="c.id">{{ c.categoria }}</option>

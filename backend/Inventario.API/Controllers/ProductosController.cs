@@ -20,13 +20,20 @@ public class ProductosController : ControllerBase
     }
 
     /// <summary>
-    /// Consulta y búsqueda paginada de productos con sus lotes e inventario.
+    /// Consulta y búsqueda paginada de productos con filtros por categoría, rango de precios y proveedor.
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<PagedResult<ProductoListItemDto>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetProductos([FromQuery] string? filtro, [FromQuery] int pagina = 1, [FromQuery] int tamanoPagina = 10)
+    public async Task<IActionResult> GetProductos(
+        [FromQuery] string? filtro,
+        [FromQuery] int? idCategoria,
+        [FromQuery] decimal? precioMin,
+        [FromQuery] decimal? precioMax,
+        [FromQuery] int? idProveedor,
+        [FromQuery] int pagina = 1,
+        [FromQuery] int tamanoPagina = 10)
     {
-        var resultado = await _productoService.BuscarProductosAsync(filtro, pagina, tamanoPagina);
+        var resultado = await _productoService.BuscarProductosAsync(filtro, idCategoria, precioMin, precioMax, idProveedor, pagina, tamanoPagina);
         return Ok(ApiResponse<PagedResult<ProductoListItemDto>>.Ok(resultado, "Listado de productos obtenido exitosamente."));
     }
 

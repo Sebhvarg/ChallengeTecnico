@@ -13,13 +13,37 @@ export class ProductoService {
 
   constructor(private http: HttpClient) {}
 
-  getProductos(filtro?: string, pagina: number = 1, tamanoPagina: number = 10): Observable<ApiResponse<PagedResult<ProductoListItem>>> {
+  getProductos(
+    filtro?: string,
+    idCategoria?: number | null,
+    precioMin?: number | null,
+    precioMax?: number | null,
+    idProveedor?: number | null,
+    pagina: number = 1,
+    tamanoPagina: number = 10
+  ): Observable<ApiResponse<PagedResult<ProductoListItem>>> {
     let params = new HttpParams()
       .set('pagina', pagina.toString())
       .set('tamanoPagina', tamanoPagina.toString());
 
     if (filtro && filtro.trim()) {
       params = params.set('filtro', filtro.trim());
+    }
+
+    if (idCategoria !== undefined && idCategoria !== null && idCategoria > 0) {
+      params = params.set('idCategoria', idCategoria.toString());
+    }
+
+    if (precioMin !== undefined && precioMin !== null) {
+      params = params.set('precioMin', precioMin.toString());
+    }
+
+    if (precioMax !== undefined && precioMax !== null) {
+      params = params.set('precioMax', precioMax.toString());
+    }
+
+    if (idProveedor !== undefined && idProveedor !== null && idProveedor > 0) {
+      params = params.set('idProveedor', idProveedor.toString());
     }
 
     return this.http.get<ApiResponse<PagedResult<ProductoListItem>>>(this.apiUrl, { params });
